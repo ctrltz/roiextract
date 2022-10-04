@@ -3,3 +3,6 @@ local/
 
 # Matlab
 *.asv
+
+# IDEA
+.idea

@@ -1,9 +1,13 @@
-function [] = roiextract_config(toolboxes)
+function [cfg] = roiextract_config(toolboxes)
 %ROIEXTRACT_CONFIG Configuration for all paths that are necessary
+    path.lemon = '/data/pt_nro109/Share/EEG_MPILMBB_LEMON/EEG_Preprocessed_BIDS_ID/EEG_Preprocessed/';
+
     toolbox.base = '/data/p_02490/Toolboxes/';
     
-    % Add precomputed matrices to path
+    % Add precomputed matrices and inverse modeling to path
     addpath('/data/p_02490/Scripts/neffb/precomputed/');
+    addpath('/data/p_02490/Scripts/neffb/inverse/');
+    addpath('/data/p_02490/Scripts/neffb/');
 
     % Load toolboxes
     n_toolboxes = numel(toolboxes);
@@ -18,10 +22,16 @@ function [] = roiextract_config(toolboxes)
                 toolbox.haufe = [toolbox.base 'haufe/'];
                 addpath(toolbox.haufe);
                 load cm17;
+            case 'tprod'
+                % NOTE: tprod tests passed only when everything was in double precision
+                toolbox.tprod = [toolbox.base 'tprod/'];
+                addpath(genpath(toolbox.tprod));
             otherwise
                 error(['Unknown toolbox ', toolboxes{tb}]);
         end
         fprintf('OK\n');
     end   
+
+    cfg.path = path;
 end
 
