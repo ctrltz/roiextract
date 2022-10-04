@@ -16,6 +16,6 @@ function [F, dF, Fadj] = ctf_dotprod_within(w, L, w0, I_in)
     F = (-1) * (dotprod ^ 2) / (norm(ctf) ^ 2);
     dF = (-2) * w * (F * (L_in * L_in') + L_in * (w0_in' * w0_in) * L_in') / (norm(ctf) ^ 2);
 
-    Fadj = dotprod / norm(ctf);
+    Fadj = abs(dotprod / norm(ctf));
 end
 

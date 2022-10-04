@@ -4,6 +4,7 @@ function [F, dF, Fadj] = ctf_ratio(w, L, I_in)
     L_in = L(:, I_in > 0);
     L_out = L(:, I_in == 0);
 
+    ctf = w * L;
     ctf_out = w * L_out;
     ctf_in = w * L_in;
 
@@ -16,6 +17,6 @@ function [F, dF, Fadj] = ctf_ratio(w, L, I_in)
     F = F_out / F_in;
     dF = 2 * w * (L_out * L_out' - F * (L_in * L_in')) / F_in;
 
-    Fadj = 1 / (1 + sqrt(F));
+    Fadj = norm(ctf_in) / norm(ctf);
 end
 
