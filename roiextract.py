@@ -222,7 +222,7 @@ def ctf_optimize_label(L, label, src, w0, alpha, reg=0.00001, quantify=False):
     # Support pre-defined options for w0
     if isinstance(w0, str):
         if w0 == 'mean_flip':
-            return label_sign_flip(label, src)[np.newaxis, :]
+            w0 = label_sign_flip(label, src)[np.newaxis, :]
         elif w0 == 'svd_leadfield':
             raise NotImplementedError('svd_leadfield')
         else:
