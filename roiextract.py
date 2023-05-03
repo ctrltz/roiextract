@@ -1,6 +1,5 @@
 import numpy as np
 
-from mne.label import label_sign_flip
 from numpy.linalg import norm
 from scipy.linalg import eig
 from scipy.optimize import minimize
@@ -26,14 +25,18 @@ def _ctf_ratio(w, L, mask):
     ctf_out = w @ L_out
     ctf_in = w @ L_in
 
-    # assert(isrow(ctf_out));
-    # assert(isrow(ctf_in));
+    # Both CTFs should be vectors
+    assert np.squeeze(ctf_out).ndim == 1
+    assert np.squeeze(ctf_in).ndim == 1
 
     F_out = norm(ctf_out) ** 2
     F_in = norm(ctf_in) ** 2
 
+    # Function and its gradient for optimization
     F = F_out / F_in
     dF = 2 * w @ (L_out @ L_out.T - F * L_in @ L_in.T) / F_in
+
+    # Adjusted value in the [0, 1] range
     F_adj = norm(ctf_in) / norm(ctf)
 
     return F, dF, F_adj
@@ -61,11 +64,13 @@ def _ctf_dotprod_within(w, L, w0, mask):
     ctf = w @ L_in
 
     assert np.isscalar(dotprod)
-    # assert(isrow(ctf));
+    assert np.squeeze(ctf).ndim == 1
 
+    # Function and its gradient for optimization
     F = (-1) * (dotprod ** 2) / (norm(ctf) ** 2)
     dF = (-2) * w @ (F * L_in @ L_in.T + L_in @ (w0_in.T @ w0_in) @ L_in.T) / (norm(ctf) ** 2)
 
+    # Adjusted value in the [0, 1] range
     F_adj = np.abs(dotprod / norm(ctf))
 
     return F, dF, F_adj
@@ -208,20 +213,32 @@ def ctf_optimize(L, w0, mask, alpha, reg=0.000001):
     return w
 
 
-def ctf_optimize_label(L, label, src, w0, alpha, reg=0.00001):
+def ctf_optimize_label(L, label, src, w0, alpha, reg=0.00001, quantify=False):
+    from mne.label import label_sign_flip
+
     # Create a binary mask for the ROI
     mask = get_label_mask(label, src)
 
     # Support pre-defined options for w0
     if isinstance(w0, str):
         if w0 == 'mean_flip':
-            w0 = label_sign_flip(label, src)[np.newaxis, :]
+            return label_sign_flip(label, src)[np.newaxis, :]
         elif w0 == 'svd_leadfield':
             raise NotImplementedError('svd_leadfield')
         else:
             raise ValueError(f'Bad option for template weights: {w0}')
 
-    return ctf_optimize(L, w0, mask, alpha, reg)
+    # Optimize the filter and quantify its properties if needed
+    w = ctf_optimize(L, w0, mask, alpha, reg)
+    if quantify:
+        dp, rat = ctf_quantify(w, L, w0, mask)
+        return w, dp, rat
+
+    return w
+
+
+def rec_optimize_label(C, W, label, src, w0, alpha, reg=0.00001, quantify=False):
+    return ctf_optimize_label(C.T @ W, label, src, w0, alpha, reg=reg, quantify=quantify)
 
 
 def get_label_mask(label, src):
