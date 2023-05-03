@@ -1,8 +1,9 @@
 # Local
 local/
 
-# Matlab
-*.asv
+# Python
+**/__pycache__/
+**/.ipynb_checkpoints
 
 # IDEA
 .idea
