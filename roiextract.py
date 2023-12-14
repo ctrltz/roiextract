@@ -42,7 +42,7 @@ def resolve_template(template, label, src):
 
 def ctf_ratio(w, L, mask):
     """
-    Calculates ratio of CTF outside/within ROI and its gradient w.r.t. w
+    Calculates ratio of CTF outside/within ROI
 
     :param w: spatial filter applied to extract ROI time series (1 x channels)
     :param L: lead field matrix (channels x voxels [x xyz])
@@ -64,9 +64,9 @@ def ctf_ratio(w, L, mask):
     return norm(ctf_in) / norm(ctf)
 
 
-def ctf_dotprod_within(w, L, w0, mask):
+def ctf_similarity(w, L, w0, mask):
     """
-    Dot product of desired and constructed filters within ROI and its gradient w.r.t. w
+    Cosine similarity of desired and constructed CTFs within ROI
 
     :param w:
     :param L:
@@ -92,9 +92,30 @@ def ctf_dotprod_within(w, L, w0, mask):
     return np.abs(dotprod / norm(ctf))
 
 
+def ctf_homogeneity(w, L, P0, mask):
+    """
+    Homogeneity of the CTF within ROI
+    """
+    # Use only voxels within the mask
+    L_in = L[:, mask]
+
+    # Make sure P0 is a row vector with unit length
+    P0 = np.squeeze(P0)[np.newaxis, :]
+    P0 = P0 / norm(P0)
+
+    ctf2 = np.squeeze(w @ L_in) ** 2
+    dotprod = np.squeeze(ctf2 @ P0.T)
+
+    assert dotprod.size == 1
+    assert ctf2.ndim == 1
+
+    # Adjusted value in the [0, 1] range
+    return np.abs(dotprod / norm(ctf2))
+
+
 def ctf_quantify(w, L, w0, mask):
     """
-    Calculate dot product within ROI and in/out ratio for a given filter
+    Calculate similarity within ROI and in/out ratio for a given filter
 
     Parameters
     ----------
@@ -110,15 +131,15 @@ def ctf_quantify(w, L, w0, mask):
 
     Returns
     -------
-    dp: float
+    sim: float
         Absolute value of the dot product of CTF within the ROI and template CTF pattern, lies in [0, 1].
     rat: float
         Ratio of CTF within ROI and total CTF, lies in [0, 1].
     """
-    dp = ctf_dotprod_within(w, L, w0, mask)
+    sim = ctf_similarity(w, L, w0, mask)
     rat = ctf_ratio(w, L, mask)
 
-    return dp, rat
+    return sim, rat
 
 
 def ctf_quantify_label(w, fwd, label, template):
