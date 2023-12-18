@@ -67,7 +67,7 @@ def ctf_homogeneity(w, L, P0, mask):
     return np.abs(dotprod / norm(ctf2))
 
 
-def ctf_quantify(w, L, mask, w0=None, P0=None):
+def ctf_quantify(w, leadfield, mask, w0=None, P0=None):
     """
     Calculate similarity within ROI and in/out ratio for a given filter
 
@@ -98,11 +98,11 @@ def ctf_quantify(w, L, mask, w0=None, P0=None):
     """
 
     result = dict()
-    result['rat'] = ctf_ratio(w, L, mask)
+    result['rat'] = ctf_ratio(w, leadfield, mask)
     if w0 is not None:
-        result['sim'] = ctf_similarity(w, L, w0, mask)
+        result['sim'] = ctf_similarity(w, leadfield, w0, mask)
     if P0 is not None:
-        result['hom'] = ctf_homogeneity(w, L, P0, mask)
+        result['hom'] = ctf_homogeneity(w, leadfield, P0, mask)
 
     return result
 

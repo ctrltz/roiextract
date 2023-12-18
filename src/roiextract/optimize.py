@@ -1,13 +1,35 @@
+import logging
 import numpy as np
+
+from functools import partial
 
 from .analytic import ctf_optimize_ratio_similarity
 from .numerical import ctf_optimize_ratio_homogeneity
-from .quantify import ctf_quantify, rec_quantify
-from .utils import get_label_mask, resolve_template, _check_input
+from .quantify import ctf_quantify
+from .utils import get_label_mask, resolve_template, _check_input, _report_props
 
 
-def ctf_optimize(leadfield, template, mask, alpha, 
-                 mode='similarity', reg=0.000001, quantify=False):
+def suggest_alpha(opt_func, quant_func, threshold, tol=0.001):
+    props = quant_func(w=opt_func(alpha=0))
+    rat_thresh = threshold * props['rat']
+    logging.info(f"Properties (alpha=0): {_report_props(props)}")
+    logging.info(f"Provided threshold: {threshold:.2g}, threshold ratio: {rat_thresh:.3f}")
+    
+    l, r = 0, 1
+    while (r - l > tol):
+        m = (l + r) / 2
+        props = quant_func(w=opt_func(alpha=m))
+        logging.info(f"alpha={m:.2g}: {_report_props(props)}")
+        if props['rat'] > rat_thresh:
+            l = m
+        else:
+            r = m
+   
+    return (l + r) / 2
+
+
+def ctf_optimize(leadfield, template, mask, alpha, mode='similarity', 
+                 threshold=None, tol=0.001, reg=0.000001, quantify=False):
     """
     Derive a spatial filter that optimizes properties of the CTF for the extracted ROI time series
 
@@ -41,26 +63,39 @@ def ctf_optimize(leadfield, template, mask, alpha,
         If provided alpha value is out of [0, 1] range.
     """
     _check_input("mode", mode, ["similarity", "homogeneity"])
+    if alpha == 'auto' and threshold is None:
+        raise ValueError("Threshold should be set if alpha='auto' is used")
+    
+    # Prepare the optimization and quantification functions
     if mode == "similarity":
-        func = ctf_optimize_ratio_similarity
-        quantify_kwargs = dict(w0=template)
+        opt_func = partial(ctf_optimize_ratio_similarity, 
+                           leadfield=leadfield, template=template, 
+                           mask=mask, reg=reg)
+        quant_func = partial(ctf_quantify, leadfield=leadfield,
+                             mask=mask, w0=template)
     else:
-        func = ctf_optimize_ratio_homogeneity
-        quantify_kwargs = dict(P0=template)
+        opt_func = partial(ctf_optimize_ratio_homogeneity, 
+                           leadfield=leadfield, template=template, 
+                           mask=mask, reg=reg)
+        quant_func = partial(ctf_quantify, leadfield=leadfield,
+                             mask=mask, P0=template)
 
-    # TODO: find optimal alpha
+    # Suggest alpha if needed
+    if alpha == 'auto':
+        alpha = suggest_alpha(opt_func, quant_func, threshold, tol=tol)
+        logging.info(f'alpha={alpha:.2g} was selected using the {threshold:2g} threshold')
 
     # Optimize the filter and quantify its properties if needed
-    w_opt = func(leadfield, template, mask, alpha, reg)
+    w_opt = opt_func(alpha=alpha)
     if quantify:
-        props = ctf_quantify(w_opt, leadfield, mask, **quantify_kwargs)
+        props = quant_func(w=w_opt)
         return w_opt, props
     
     return w_opt
 
 
-def ctf_optimize_label(fwd, label, template, alpha, 
-                       mode="similarity", reg=0.00001, quantify=False):
+def ctf_optimize_label(fwd, label, template, alpha, mode="similarity", 
+                       threshold=None, tol=0.001, reg=0.00001, quantify=False):
     # Extract data from Forward
     leadfield = fwd['sol']['data']
     src = fwd['src']
@@ -72,18 +107,18 @@ def ctf_optimize_label(fwd, label, template, alpha,
     template = resolve_template(template, label, src)
 
     # Optimize the filter and quantify its properties if needed
-    return ctf_optimize(leadfield, template, mask, alpha, 
-                        mode=mode, reg=reg, quantify=quantify)
+    return ctf_optimize(leadfield, template, mask, alpha, mode=mode, 
+                        threshold=threshold, tol=tol, reg=reg, quantify=quantify)
 
 
-def rec_optimize(cov_matrix, inverse, template, mask, alpha, 
-                 mode="similarity", reg=0.00001, quantify=False):
-    return ctf_optimize(cov_matrix.T @ inverse, template, mask, alpha, 
-                        mode=mode, reg=reg, quantify=quantify)
+def rec_optimize(cov_matrix, inverse, template, mask, alpha, mode="similarity", 
+                 threshold=None, tol=0.001, reg=0.00001, quantify=False):
+    return ctf_optimize(cov_matrix.T @ inverse, template, mask, alpha, mode=mode, 
+                        threshold=threshold, tol=tol, reg=reg, quantify=quantify)
 
 
-def rec_optimize_label(cov_matrix, fwd, inv, label, template, alpha, 
-                       mode="similarity", reg=0.00001, quantify=False, **inv_kwargs):
+def rec_optimize_label(cov_matrix, fwd, inv, label, template, alpha, mode="similarity",
+                       threshold=None, tol=0.001, reg=0.00001, quantify=False, **inv_kwargs):
     from mne.minimum_norm.resolution_matrix import _get_matrix_from_inverse_operator
 
     # Extract data from Forward
@@ -99,5 +134,5 @@ def rec_optimize_label(cov_matrix, fwd, inv, label, template, alpha,
     template = resolve_template(template, label, src)
 
     # Optimize the filter and quantify its properties if needed
-    return rec_optimize(cov_matrix, inverse, template, mask, alpha, 
-                        mode=mode, reg=reg, quantify=quantify)
+    return rec_optimize(cov_matrix, inverse, template, mask, alpha, mode=mode,
+                        threshold=threshold, tol=tol, reg=reg, quantify=quantify)

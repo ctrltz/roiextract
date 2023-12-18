@@ -6,6 +6,10 @@ def _check_input(param, value, allowed_values):
         raise ValueError(f'Value {value} is not supported for {param}')
 
 
+def _report_props(props):
+    return ", ".join([f"{k}={v:.2g}" for k, v in props.items()])
+
+
 def get_label_mask(label, src):
     vertno = [s['vertno'] for s in src]
     nvert = [len(vn) for vn in vertno]
