@@ -89,28 +89,28 @@ def ctf_quantify(w, leadfield, mask, w0=None, P0=None):
     -------
     result: a dictionary with the estimated CTF properties
         'rat': float
-            Ratio of CTF within ROI and total CTF, lies in [0, 1]. 
+            Ratio of CTF within ROI and total CTF, lies in [0, 1].
         'sim': float
             Similarity between the actual CTF and the template CTF pattern, lies in [0, 1]. It is only returned if w0 was provided.
         'hom': float
-            Homogeneity of the power contributions of voxels within the ROI, lies in [0, 1]. It is only returned if P0 was provided. 
-    
+            Homogeneity of the power contributions of voxels within the ROI, lies in [0, 1]. It is only returned if P0 was provided.
+
     """
 
     result = dict()
-    result['rat'] = ctf_ratio(w, leadfield, mask)
+    result["rat"] = ctf_ratio(w, leadfield, mask)
     if w0 is not None:
-        result['sim'] = ctf_similarity(w, leadfield, w0, mask)
+        result["sim"] = ctf_similarity(w, leadfield, w0, mask)
     if P0 is not None:
-        result['hom'] = ctf_homogeneity(w, leadfield, P0, mask)
+        result["hom"] = ctf_homogeneity(w, leadfield, P0, mask)
 
     return result
 
 
 def ctf_quantify_label(w, fwd, label, template):
     # Extract data from Forward
-    leadfield = fwd['sol']['data']
-    src = fwd['src']
+    leadfield = fwd["sol"]["data"]
+    src = fwd["src"]
 
     # Create a binary mask for the ROI
     mask = get_label_mask(label, src)
@@ -127,8 +127,8 @@ def rec_quantify(w, cov_matrix, inverse, template, mask):
 
 def rec_quantify_label(w, fwd, label, template):
     # Extract data from Forward
-    leadfield = fwd['sol']['data']
-    src = fwd['src']
+    leadfield = fwd["sol"]["data"]
+    src = fwd["src"]
 
     # Create a binary mask for the ROI
     mask = get_label_mask(label, src)

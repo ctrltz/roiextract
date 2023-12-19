@@ -4,15 +4,17 @@ from mock import patch
 from scipy.optimize import OptimizeResult
 
 from roiextract.numerical import (
-    _ctf_ratio, _ctf_homogeneity, _ctf_compromise, 
-    ctf_optimize_ratio_homogeneity
+    _ctf_ratio,
+    _ctf_homogeneity,
+    _ctf_compromise,
+    ctf_optimize_ratio_homogeneity,
 )
 
 
 def test_ctf_ratio_minimal():
     """
     Tests the most simple case with 2 channels, 2 sources and identity leadfield.
-    If w = [w1 w2], then F = w2 ** 2 / w1 ** 2, 
+    If w = [w1 w2], then F = w2 ** 2 / w1 ** 2,
     dF/dw1 = -2 w2 ** 2 / w1 ** 3, dF/dw2 = 2 w2 / w1 ** 2
     """
     L = np.eye(2, 2)
@@ -20,10 +22,9 @@ def test_ctf_ratio_minimal():
     for _ in range(10):
         w = np.random.randn(2)
         expected_F = w[1] ** 2 / w[0] ** 2
-        expected_dF = np.array([
-            -2 * w[1] ** 2 / w[0] ** 3,
-            2 * w[1] / w[0] ** 2
-        ])
+        expected_dF = np.array(
+            [-2 * w[1] ** 2 / w[0] ** 3, 2 * w[1] / w[0] ** 2]
+        )
 
         F, dF = _ctf_ratio(w, L, mask)
         assert np.allclose(F, expected_F, rtol=1e-6)
@@ -44,18 +45,20 @@ def test_ctf_homogeneity_minimal():
         w = np.random.randn(2)
         denom = w[0] ** 4 + w[1] ** 4
         expected_F = (-1) * (0.5 + (w[0] ** 2) * (w[1] ** 2) / denom)
-        expected_dF = np.array([
-            2 * w[0] * (w[1] ** 2) * (w[0] ** 4 - w[1] ** 4) / denom ** 2,
-            2 * w[1] * (w[0] ** 2) * (w[1] ** 4 - w[0] ** 4) / denom ** 2
-        ])
+        expected_dF = np.array(
+            [
+                2 * w[0] * (w[1] ** 2) * (w[0] ** 4 - w[1] ** 4) / denom**2,
+                2 * w[1] * (w[0] ** 2) * (w[1] ** 4 - w[0] ** 4) / denom**2,
+            ]
+        )
 
         F, dF = _ctf_homogeneity(w, L, P0, mask)
         assert np.allclose(F, expected_F, rtol=1e-6)
         assert np.allclose(dF, expected_dF, rtol=1e-6)
 
 
-@patch('roiextract.numerical._ctf_homogeneity')
-@patch('roiextract.numerical._ctf_ratio')
+@patch("roiextract.numerical._ctf_homogeneity")
+@patch("roiextract.numerical._ctf_ratio")
 def test_ctf_compromise_minimal(ratio_fn, homogeneity_fn):
     """
     Tests the linear combination with patched ratio and homogeneity.
@@ -79,22 +82,17 @@ def test_ctf_optimize_ratio_homogeneity():
     """
     Tests only the return_scipy flag
     """
-    leadfield = np.array([
-        [1, 1, 0, 0],
-        [0, 0, 1, 1]
-    ])
+    leadfield = np.array([[1, 1, 0, 0], [0, 0, 1, 1]])
     mask = np.array([True, True, False, False])
     template = np.array([1, 1])
     x0 = np.array([1, 1])
 
     result = ctf_optimize_ratio_homogeneity(
-        leadfield, template, mask, 
-        alpha=0, x0=x0, return_scipy=False
+        leadfield, template, mask, alpha=0, x0=x0, return_scipy=False
     )
     assert isinstance(result, np.ndarray)
 
     result = ctf_optimize_ratio_homogeneity(
-        leadfield, template, mask, 
-        alpha=0, x0=x0, return_scipy=True
+        leadfield, template, mask, alpha=0, x0=x0, return_scipy=True
     )
     assert isinstance(result, OptimizeResult)

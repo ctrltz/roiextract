@@ -24,3 +24,7 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/ctrltz/roiextract"
 "Bug Tracker" = "https://github.com/ctrltz/roiextract/issues"
+
+[tool.ruff]
+line-length = 80
+indent-width = 4
