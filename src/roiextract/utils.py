@@ -1,4 +1,8 @@
+import logging
 import numpy as np
+
+
+logger = logging.getLogger("roiextract")
 
 
 def _check_input(param, value, allowed_values):

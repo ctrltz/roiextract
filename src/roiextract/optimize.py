@@ -1,4 +1,3 @@
-import logging
 import numpy as np
 
 from functools import partial
@@ -6,26 +5,43 @@ from functools import partial
 from .analytic import ctf_optimize_ratio_similarity
 from .numerical import ctf_optimize_ratio_homogeneity
 from .quantify import ctf_quantify
-from .utils import get_label_mask, resolve_template, _check_input, _report_props
+from .utils import (
+    get_label_mask,
+    resolve_template,
+    _check_input,
+    _report_props,
+    logger,
+)
 
 
-def suggest_alpha(opt_func, quant_func, threshold, tol=0.001):
-    props = quant_func(w=opt_func(alpha=0))
-    rat_thresh = threshold * props["rat"]
-    logging.info(f"Properties (alpha=0): {_report_props(props)}")
-    logging.info(
-        f"Provided threshold: {threshold:.2g}, threshold ratio: {rat_thresh:.3f}"
+INITIAL_ALPHAS = {"rat": 0, "sim": 0.999, "hom": 0.999}
+IS_DECREASING = {"rat": True, "sim": False, "hom": False}
+
+
+def suggest_alpha(opt_func, quant_func, criteria, threshold, tol=0.001):
+    props = quant_func(w=opt_func(alpha=INITIAL_ALPHAS[criteria]))
+    crit_thresh = threshold * props[criteria]
+    logger.info(
+        f"Suggesting alpha to obtain at least {threshold:.2g} of max {criteria}"
     )
+    logger.info(f"Properties (alpha=0): {_report_props(props)}")
+    logger.info(f"Criteria threshold: {crit_thresh:.3g}")
 
     left, right = 0, 1
     while right - left > tol:
         mid = (left + right) / 2
         props = quant_func(w=opt_func(alpha=mid))
-        logging.info(f"alpha={mid:.2g}: {_report_props(props)}")
-        if props["rat"] > rat_thresh:
-            left = mid
+        logger.info(f"Properties (alpha={mid:.3g}): {_report_props(props)}")
+        if IS_DECREASING[criteria]:
+            if props[criteria] > crit_thresh:
+                left = mid
+            else:
+                right = mid
         else:
-            right = mid
+            if props[criteria] > crit_thresh:
+                right = mid
+            else:
+                left = mid
 
     return (left + right) / 2
 
@@ -36,6 +52,7 @@ def ctf_optimize(
     mask,
     alpha,
     mode="similarity",
+    criteria="rat",
     threshold=None,
     tol=0.001,
     reg=0.000001,
@@ -104,8 +121,10 @@ def ctf_optimize(
 
     # Suggest alpha if needed
     if alpha == "auto":
-        alpha = suggest_alpha(opt_func, quant_func, threshold, tol=tol)
-        logging.info(
+        alpha = suggest_alpha(
+            opt_func, quant_func, criteria, threshold, tol=tol
+        )
+        logger.info(
             f"alpha={alpha:.2g} was selected using the {threshold:2g} threshold"
         )
 
@@ -124,6 +143,7 @@ def ctf_optimize_label(
     template,
     alpha,
     mode="similarity",
+    criteria="rat",
     threshold=None,
     tol=0.001,
     reg=0.00001,
@@ -146,6 +166,7 @@ def ctf_optimize_label(
         mask,
         alpha,
         mode=mode,
+        criteria=criteria,
         threshold=threshold,
         tol=tol,
         reg=reg,
@@ -160,6 +181,7 @@ def rec_optimize(
     mask,
     alpha,
     mode="similarity",
+    criteria="rat",
     threshold=None,
     tol=0.001,
     reg=0.00001,
@@ -171,6 +193,7 @@ def rec_optimize(
         mask,
         alpha,
         mode=mode,
+        criteria=criteria,
         threshold=threshold,
         tol=tol,
         reg=reg,
@@ -186,6 +209,7 @@ def rec_optimize_label(
     template,
     alpha,
     mode="similarity",
+    criteria="rat",
     threshold=None,
     tol=0.001,
     reg=0.00001,
@@ -216,6 +240,7 @@ def rec_optimize_label(
         mask,
         alpha,
         mode=mode,
+        criteria=criteria,
         threshold=threshold,
         tol=tol,
         reg=reg,
