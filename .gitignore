@@ -1,11 +1,15 @@
-# Local
-local/
-
 # Python
-build/
 **/__pycache__/
 **/.ipynb_checkpoints
+
+# Build & tools
+build/
 *.egg-info
+.pytest_cache/
+.ruff_cache/
+
+# Tests
+.coverage
 
 # IDEA
 .idea
