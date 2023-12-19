@@ -74,9 +74,10 @@ def ctf_optimize(leadfield, template, mask, alpha, mode='similarity',
         quant_func = partial(ctf_quantify, leadfield=leadfield,
                              mask=mask, w0=template)
     else:
+        x0 = np.ones((leadfield.shape[0],))
         opt_func = partial(ctf_optimize_ratio_homogeneity, 
                            leadfield=leadfield, template=template, 
-                           mask=mask, reg=reg)
+                           mask=mask, x0=x0)
         quant_func = partial(ctf_quantify, leadfield=leadfield,
                              mask=mask, P0=template)
 
