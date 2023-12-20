@@ -44,7 +44,7 @@ def ctf_optimize_ratio_similarity(
 
     # Make sure w0 is a row vector with unit length
     template = np.squeeze(template)
-    if template.ndim != 1:
+    if template.ndim > 1:
         raise ValueError(
             f"Template weights should be a vector, got "
             f"{template.ndim} dimensions instead"
