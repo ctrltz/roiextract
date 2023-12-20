@@ -35,15 +35,12 @@ def resolve_template(template, label, src):
     if isinstance(template, str):
         from mne.label import label_sign_flip
 
+        _check_input("template", template, ["mean_flip", "mean"])
         signflip = label_sign_flip(label, src)[np.newaxis, :]
 
         if template == "mean_flip":
             return signflip
-        elif template == "mean":
+        if template == "mean":
             return np.ones((1, signflip.size))
-        elif template == "svd_leadfield":
-            raise NotImplementedError("svd_leadfield")
-        else:
-            raise ValueError(f"Bad option for template weights: {template}")
 
     return template
