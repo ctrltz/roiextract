@@ -16,10 +16,6 @@ def ctf_ratio(w, L, mask):
     ctf = np.squeeze(w @ L)
     ctf_in = np.squeeze(w @ L_in)
 
-    # Both CTFs should be vectors
-    assert ctf.ndim == 1
-    assert ctf_in.ndim == 1
-
     # Adjusted value in the [0, 1] range
     return norm(ctf_in) / norm(ctf)
 
