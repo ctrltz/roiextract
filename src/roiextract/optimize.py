@@ -84,6 +84,9 @@ def ctf_optimize(
     -------
     w: array
         Spatial filter produced by the optimization.
+    alpha: float
+        The value of alpha that was used during the optimization (either the provided one
+        or the one obtained through binary search if alpha='auto')
 
     Raises
     ------
@@ -132,9 +135,9 @@ def ctf_optimize(
     w_opt = opt_func(alpha=alpha)
     if quantify:
         props = quant_func(w=w_opt)
-        return w_opt, props
+        return w_opt, alpha, props
 
-    return w_opt
+    return w_opt, alpha
 
 
 def ctf_optimize_label(
