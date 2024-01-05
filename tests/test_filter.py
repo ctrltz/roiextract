@@ -44,6 +44,26 @@ def test_spatialfilter_apply():
     assert np.array_equal(sf.apply_raw(raw), w), "apply_raw"
 
 
+@pytest.mark.parametrize(
+    "mode,normalize,expected",
+    [
+        ["amplitude", None, [-3, 4]],
+        ["power", None, [9, 16]],
+        ["amplitude", "norm", [-0.6, 0.8]],
+        ["amplitude", "max", [-0.75, 1]],
+        ["power", None, [9, 16]],
+        ["power", "sum", [0.36, 0.64]],
+    ],
+)
+def test_spatialfilter_get_ctf(mode, normalize, expected):
+    # ctf = [-3, 4] or [9, 16] for power and amplitude, respectively
+    w = np.array([-1.0, 2.0])
+    L = np.array([[3.0, 0.0], [0.0, 2.0]])
+    sf = SpatialFilter(w=w, alpha=0)
+    ctf = sf.get_ctf(L, mode=mode, normalize=normalize)
+    assert np.allclose(ctf, expected, rtol=1e-6)
+
+
 @patch("mne.EvokedArray.plot_topomap")
 def test_spatialfilter_plot(plot_topomap_fn):
     n_chans = 5

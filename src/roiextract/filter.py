@@ -4,6 +4,8 @@ import mne
 
 from typing import Collection
 
+from .utils import _check_input, data2stc
+
 
 class SpatialFilter:
     def __init__(self, w: npt.ArrayLike, alpha: float, name: str = "") -> None:
@@ -31,6 +33,42 @@ class SpatialFilter:
 
     def apply_raw(self, raw: mne.io.Raw | mne.io.RawArray) -> np.array:
         return self.apply(raw.get_data())
+
+    def get_ctf(
+        self,
+        L: npt.ArrayLike,
+        mode: str = "power",
+        normalize: str | None = "sum",
+    ) -> np.array:
+        _check_input("mode", mode, ["power", "amplitude"])
+        _check_input("normalize", normalize, ["norm", "max", "sum", None])
+
+        # Estimate the CTF
+        ctf = self.w @ L
+        if mode == "power":
+            ctf = ctf**2
+
+        # Normalize if needed:
+        if normalize == "norm":
+            ctf /= np.linalg.norm(ctf)
+        elif normalize == "max":
+            ctf /= np.abs(ctf).max()
+        elif normalize == "sum":
+            ctf /= np.abs(ctf).sum()
+        return ctf
+
+    def get_ctf_fwd(
+        self,
+        fwd: mne.Forward,
+        mode: str = "power",
+        normalize: str = "norm",
+        subject: str | None = None,
+    ) -> mne.SourceEstimate:
+        leadfield = fwd["sol"]["data"]
+        src = fwd["src"]
+        return data2stc(
+            self.get_ctf(leadfield, mode, normalize), src, subject=subject
+        )
 
     def plot(self, info: mne.Info, **topomap_kwargs):
         # Make sure that the provided info has the correct amount of channels
