@@ -23,3 +23,15 @@ sf.plot(info)
 
 sf.apply(data)
 ```
+
+Estimate the CTF for the filter:
+
+```python
+ctf = sf.get_ctf_fwd(fwd)  # ctf is an instance of mne.SourceEstimate
+```
+
+Inspect the CTF:
+
+```python
+ctf.plot()
+```
