@@ -3,6 +3,7 @@ import numpy as np
 from functools import partial
 
 from .analytic import ctf_optimize_ratio_similarity
+from .filter import SpatialFilter
 from .numerical import ctf_optimize_ratio_homogeneity
 from .quantify import ctf_quantify
 from .utils import (
@@ -57,6 +58,7 @@ def ctf_optimize(
     tol=0.001,
     reg=0.000001,
     quantify=False,
+    name="",
 ):
     """
     Derive a spatial filter that optimizes properties of the CTF for the extracted ROI time series
@@ -133,11 +135,12 @@ def ctf_optimize(
 
     # Optimize the filter and quantify its properties if needed
     w_opt = opt_func(alpha=alpha)
+    sf = SpatialFilter(w=w_opt, alpha=alpha, name=name)
     if quantify:
         props = quant_func(w=w_opt)
-        return w_opt, alpha, props
+        return sf, props
 
-    return w_opt, alpha
+    return sf
 
 
 def ctf_optimize_label(
@@ -151,10 +154,13 @@ def ctf_optimize_label(
     tol=0.001,
     reg=0.00001,
     quantify=False,
+    name=None,
 ):
-    # Extract data from Forward
+    # Extract data from Forward and Label
     leadfield = fwd["sol"]["data"]
     src = fwd["src"]
+    if name is None:
+        name = label.name
 
     # Create a binary mask for the ROI
     mask = get_label_mask(label, src)
@@ -174,6 +180,7 @@ def ctf_optimize_label(
         tol=tol,
         reg=reg,
         quantify=quantify,
+        name=name,
     )
 
 
@@ -189,6 +196,7 @@ def rec_optimize(
     tol=0.001,
     reg=0.00001,
     quantify=False,
+    name="",
 ):
     return ctf_optimize(
         cov_matrix.T @ inverse,
@@ -217,14 +225,17 @@ def rec_optimize_label(
     tol=0.001,
     reg=0.00001,
     quantify=False,
+    name=None,
     **inv_kwargs,
 ):
     from mne.minimum_norm.resolution_matrix import (
         _get_matrix_from_inverse_operator,
     )
 
-    # Extract data from Forward
+    # Extract data from Forward and Label
     src = fwd["src"]
+    if name is None:
+        name = label.name
 
     # Extract data from InverseOperator
     inverse = _get_matrix_from_inverse_operator(inv, fwd, **inv_kwargs)
@@ -248,4 +259,5 @@ def rec_optimize_label(
         tol=tol,
         reg=reg,
         quantify=quantify,
+        name=name,
     )
