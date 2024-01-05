@@ -4,12 +4,22 @@ Optimization of extraction of ROI time series based on the cross-talk function (
 
 ## Usage
 
+Obtain a spatial filter that optimize CTF properties:
+
 ```python
 from roiextract import ctf_optimize_label
 
-w_opt = ctf_optimize_label(fwd, label, template, alpha)
+sf = ctf_optimize_label(fwd, label, template, alpha)
 
-w_opt, props = ctf_optimize_label(fwd, label, template, alpha, quantify=True)
+sf, props = ctf_optimize_label(fwd, label, template, alpha, quantify=True)
 
-w_opt = ctf_optimize_label(fwd, label, template, alpha='auto', threshold=0.95)
+sf = ctf_optimize_label(fwd, label, template, alpha='auto', threshold=0.95)
+```
+
+Inspect or apply the filter:
+
+```python
+sf.plot(info)
+
+sf.apply(data)
 ```
