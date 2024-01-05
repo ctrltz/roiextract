@@ -4,7 +4,7 @@ Optimization of extraction of ROI time series based on the cross-talk function (
 
 ## Usage
 
-Obtain a spatial filter that optimize CTF properties:
+Obtain a spatial filter that optimizes CTF properties:
 
 ```python
 from roiextract import ctf_optimize_label
@@ -16,12 +16,16 @@ sf, props = ctf_optimize_label(fwd, label, template, alpha, quantify=True)
 sf = ctf_optimize_label(fwd, label, template, alpha='auto', threshold=0.95)
 ```
 
-Inspect or apply the filter:
+Plot the filter as a topomap:
 
 ```python
 sf.plot(info)
+```
 
-sf.apply(data)
+Apply it to the data to obtain the time course of activity in the ROI/label:
+
+```python
+label_tc = sf.apply(data)
 ```
 
 Estimate the CTF for the filter:
@@ -30,7 +34,7 @@ Estimate the CTF for the filter:
 ctf = sf.get_ctf_fwd(fwd)  # ctf is an instance of mne.SourceEstimate
 ```
 
-Inspect the CTF:
+Plot the CTF on the brain surface:
 
 ```python
 ctf.plot()

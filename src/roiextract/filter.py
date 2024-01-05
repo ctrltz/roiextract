@@ -48,7 +48,7 @@ class SpatialFilter:
         if mode == "power":
             ctf = ctf**2
 
-        # Normalize if needed:
+        # Normalize if needed
         if normalize == "norm":
             ctf /= np.linalg.norm(ctf)
         elif normalize == "max":
