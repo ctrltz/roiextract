@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import mne
 
 
 logger = logging.getLogger("roiextract")
@@ -44,3 +45,10 @@ def resolve_template(template, label, src):
             return np.ones((1, signflip.size))
 
     return template
+
+
+def data2stc(data, src, subject=None):
+    vertno = [s["vertno"] for s in src]
+    return mne.SourceEstimate(
+        data=data, vertices=vertno, tmin=0, tstep=0.01, subject=subject
+    )
