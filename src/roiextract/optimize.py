@@ -133,8 +133,9 @@ def ctf_optimize(
             f"alpha={alpha:.2g} was selected using the {threshold:2g} threshold"
         )
 
-    # Optimize the filter and quantify its properties if needed
+    # Optimize the filter, normalize and quantify its properties if needed
     w_opt = opt_func(alpha=alpha)
+    w_opt = w_opt / np.abs(w_opt).max()
     sf = SpatialFilter(w=w_opt, alpha=alpha, name=name)
     if quantify:
         props = quant_func(w=w_opt)
