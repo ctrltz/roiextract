@@ -80,15 +80,8 @@ class SpatialFilter:
                 f" does not match the length of the spatial filter ({n_chans_filter})"
             )
 
-        # Use the mne.Evoked.plot_topomap as it provides colorbar
-        w = np.squeeze(self.w)[:, np.newaxis]
-        w_evoked = mne.EvokedArray(w, info, tmin=0)
-
-        plot_kwargs = dict(
-            times=0, time_format="", units="AU", scalings=dict(eeg=1, meg=1)
-        )
-        plot_kwargs.update(topomap_kwargs)
-        return w_evoked.plot_topomap(**plot_kwargs)
+        w = np.squeeze(self.w)
+        return mne.viz.plot_topomap(w, info, **topomap_kwargs)
 
 
 def apply_batch(data, filters: Collection[SpatialFilter]) -> np.array:

@@ -64,22 +64,23 @@ def test_spatialfilter_get_ctf(mode, normalize, expected):
     assert np.allclose(ctf, expected, rtol=1e-6)
 
 
-@patch("mne.EvokedArray.plot_topomap")
+@patch("mne.viz.plot_topomap")
 def test_spatialfilter_plot(plot_topomap_fn):
     n_chans = 5
     sf = SpatialFilter(w=np.zeros((n_chans,)), alpha=0)
     info = create_dummy_info(n_chans)
 
-    # Check that EvokedArray.plot_topomap was called
+    # Check that mne.viz.plot_topomap was called
     sf.plot(info)
     plot_topomap_fn.assert_called_once()
 
     # Check that it is possible to provide custom kwargs
     plot_topomap_fn.reset_mock()
-    sf.plot(info, units="V", colorbar=False)
+    sf.plot(info, sphere="eeglab")
     plot_topomap_fn.assert_called_once()
-    assert not plot_topomap_fn.call_args.kwargs.get("colorbar"), "provide arg"
-    assert plot_topomap_fn.call_args.kwargs.get("units") == "V", "override arg"
+    assert (
+        plot_topomap_fn.call_args.kwargs.get("sphere") == "eeglab"
+    ), "provide arg"
 
 
 def test_spatialfilter_plot_bad_info():
