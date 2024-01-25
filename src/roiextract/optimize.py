@@ -15,24 +15,25 @@ from .utils import (
 )
 
 
-INITIAL_ALPHAS = {"rat": 0, "sim": 0.999, "hom": 0.999}
+INITIAL_LAMBDAS = {"rat": 0, "sim": 0.999, "hom": 0.999}
 IS_DECREASING = {"rat": True, "sim": False, "hom": False}
 
 
-def suggest_alpha(opt_func, quant_func, criteria, threshold, tol=0.001):
-    props = quant_func(w=opt_func(alpha=INITIAL_ALPHAS[criteria]))
+def suggest_lambda(opt_func, quant_func, criteria, threshold, tol=0.001):
+    initial_lambda = INITIAL_LAMBDAS[criteria]
+    props = quant_func(w=opt_func(lambda_=initial_lambda))
     crit_thresh = threshold * props[criteria]
     logger.info(
-        f"Suggesting alpha to obtain at least {threshold:.2g} of max {criteria}"
+        f"Suggesting lambda to obtain at least {threshold:.2g} of max {criteria}"
     )
-    logger.info(f"Properties (alpha=0): {_report_props(props)}")
+    logger.info(f"Properties (lambda={initial_lambda}): {_report_props(props)}")
     logger.info(f"Criteria threshold: {crit_thresh:.3g}")
 
     left, right = 0, 1
     while right - left > tol:
         mid = (left + right) / 2
-        props = quant_func(w=opt_func(alpha=mid))
-        logger.info(f"Properties (alpha={mid:.3g}): {_report_props(props)}")
+        props = quant_func(w=opt_func(lambda_=mid))
+        logger.info(f"Properties (lambda={mid:.3g}): {_report_props(props)}")
         if IS_DECREASING[criteria]:
             if props[criteria] > crit_thresh:
                 left = mid
@@ -51,7 +52,7 @@ def ctf_optimize(
     leadfield,
     template,
     mask,
-    alpha,
+    lambda_,
     mode="similarity",
     criteria="rat",
     threshold=None,
@@ -72,7 +73,7 @@ def ctf_optimize(
     mask: array_like
         Voxel mask of the region of interest with shape (voxels,). Contains ones and zeros for voxels within and
         outside ROI, respectively.
-    alpha: float
+    lambda_: float
         If 0, only ratio is optimized. If 1, only dot product. Values in between allow tweaking the balance between
         optimization for dot product or ratio.
     mode: str
@@ -84,20 +85,20 @@ def ctf_optimize(
 
     Returns
     -------
-    w: array
+    sf: SpatialFilter
         Spatial filter produced by the optimization.
-    alpha: float
-        The value of alpha that was used during the optimization (either the provided one
-        or the one obtained through binary search if alpha='auto')
+    props: dict, only returned if quantify=True
+        Dictionary that contains the estimates of CTF-based properties (ratio, similarity
+        and/or homogeneity).
 
     Raises
     ------
     ValueError
-        If provided alpha value is out of [0, 1] range.
+        If provided lambda_ value is out of [0, 1] range.
     """
     _check_input("mode", mode, ["similarity", "homogeneity"])
-    if alpha == "auto" and threshold is None:
-        raise ValueError("Threshold should be set if alpha='auto' is used")
+    if lambda_ == "auto" and threshold is None:
+        raise ValueError("Threshold should be set if lambda_='auto' is used")
 
     # Prepare the optimization and quantification functions
     if mode == "similarity":
@@ -124,19 +125,19 @@ def ctf_optimize(
             ctf_quantify, leadfield=leadfield, mask=mask, P0=template
         )
 
-    # Suggest alpha if needed
-    if alpha == "auto":
-        alpha = suggest_alpha(
+    # Suggest lambda if needed
+    if lambda_ == "auto":
+        lambda_ = suggest_lambda(
             opt_func, quant_func, criteria, threshold, tol=tol
         )
         logger.info(
-            f"alpha={alpha:.2g} was selected using the {threshold:2g} threshold"
+            f"lambda={lambda_:.2g} was selected using the {threshold:2g} threshold"
         )
 
     # Optimize the filter, normalize and quantify its properties if needed
-    w_opt = opt_func(alpha=alpha)
+    w_opt = opt_func(lambda_=lambda_)
     w_opt = w_opt / np.abs(w_opt).max()
-    sf = SpatialFilter(w=w_opt, alpha=alpha, name=name)
+    sf = SpatialFilter(w=w_opt, lambda_=lambda_, name=name)
     if quantify:
         props = quant_func(w=w_opt)
         return sf, props
@@ -148,7 +149,7 @@ def ctf_optimize_label(
     fwd,
     label,
     template,
-    alpha,
+    lambda_,
     mode="similarity",
     criteria="rat",
     threshold=None,
@@ -174,7 +175,7 @@ def ctf_optimize_label(
         leadfield,
         template,
         mask,
-        alpha,
+        lambda_,
         mode=mode,
         criteria=criteria,
         threshold=threshold,
@@ -190,7 +191,7 @@ def rec_optimize(
     inverse,
     template,
     mask,
-    alpha,
+    lambda_,
     mode="similarity",
     criteria="rat",
     threshold=None,
@@ -203,13 +204,14 @@ def rec_optimize(
         cov_matrix.T @ inverse,
         template,
         mask,
-        alpha,
+        lambda_,
         mode=mode,
         criteria=criteria,
         threshold=threshold,
         tol=tol,
         reg=reg,
         quantify=quantify,
+        name=name,
     )
 
 
@@ -219,7 +221,7 @@ def rec_optimize_label(
     inv,
     label,
     template,
-    alpha,
+    lambda_,
     mode="similarity",
     criteria="rat",
     threshold=None,
@@ -253,7 +255,7 @@ def rec_optimize_label(
         inverse,
         template,
         mask,
-        alpha,
+        lambda_,
         mode=mode,
         criteria=criteria,
         threshold=threshold,

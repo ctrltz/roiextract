@@ -62,18 +62,18 @@ def test_ctf_homogeneity_minimal():
 def test_ctf_compromise_minimal(ratio_fn, homogeneity_fn):
     """
     Tests the linear combination with patched ratio and homogeneity.
-    F_rat = 0.5, F_hom = 1 -> F = (1 - alpha) * 0.5 + alpha * 1 = 0.5 * (1 + alpha)
-    dF_rat = [1 0], F_hom = [0 1] -> dF = [(1 - alpha) alpha]
+    F_rat = 0.5, F_hom = 1 -> F = (1 - lambda) * 0.5 + lambda * 1 = 0.5 * (1 + lambda)
+    dF_rat = [1 0], F_hom = [0 1] -> dF = [(1 - lambda) lambda]
     """
     ratio_fn.return_value = (0.5, np.array([1, 0]))
     homogeneity_fn.return_value = (1, np.array([0, 1]))
 
-    for alpha in np.linspace(0, 1, num=11):
-        expected_F = 0.5 * (1 + alpha)
-        expected_dF = np.array([1 - alpha, alpha])
+    for lambda_ in np.linspace(0, 1, num=11):
+        expected_F = 0.5 * (1 + lambda_)
+        expected_dF = np.array([1 - lambda_, lambda_])
 
-        # all inputs apart from alpha do not matter since the functions are patched
-        F, dF = _ctf_compromise(None, None, None, None, alpha)
+        # all inputs apart from lambda_ do not matter since the functions are patched
+        F, dF = _ctf_compromise(None, None, None, None, lambda_)
         assert np.allclose(F, expected_F, rtol=1e-6)
         assert np.allclose(dF, expected_dF, rtol=1e-6)
 
@@ -88,11 +88,11 @@ def test_ctf_optimize_ratio_homogeneity():
     x0 = np.array([1, 1])
 
     result = ctf_optimize_ratio_homogeneity(
-        leadfield, template, mask, alpha=0, x0=x0, return_scipy=False
+        leadfield, template, mask, lambda_=0, x0=x0, return_scipy=False
     )
     assert isinstance(result, np.ndarray)
 
     result = ctf_optimize_ratio_homogeneity(
-        leadfield, template, mask, alpha=0, x0=x0, return_scipy=True
+        leadfield, template, mask, lambda_=0, x0=x0, return_scipy=True
     )
     assert isinstance(result, OptimizeResult)

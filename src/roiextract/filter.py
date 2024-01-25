@@ -8,9 +8,11 @@ from .utils import _check_input, data2stc
 
 
 class SpatialFilter:
-    def __init__(self, w: npt.ArrayLike, alpha: float, name: str = "") -> None:
+    def __init__(
+        self, w: npt.ArrayLike, lambda_: float, name: str = ""
+    ) -> None:
         self.w = w
-        self.alpha = alpha
+        self.lambda_ = lambda_
         self.name = name
 
     def __repr__(self) -> str:
@@ -18,12 +20,12 @@ class SpatialFilter:
         Generate a short description for the filter in the following form:
         ([x] - only added if present)
 
-        <SpatialFilter | [name] | alpha=X | XX channels>
+        <SpatialFilter | [name] | lambda=X | XX channels>
         """
         result = "<SpatialFilter"
         if self.name:
             result += f" | {self.name}"
-        result += f" | alpha={self.alpha:.2g} | {self.w.size} channels>"
+        result += f" | lambda={self.lambda_:.2g} | {self.w.size} channels>"
 
         return result
 

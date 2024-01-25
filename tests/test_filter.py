@@ -15,17 +15,17 @@ def create_dummy_info(n_chans):
 
 def test_spatialfilter_repr():
     n_chans = 10
-    alpha = 0.5
+    lambda_ = 0.5
     name = "mylabel"
 
     # Test __repr__ with no name set
-    sf = SpatialFilter(w=np.zeros((n_chans,)), alpha=alpha)
-    expected_repr = "<SpatialFilter | alpha=0.5 | 10 channels>"
+    sf = SpatialFilter(w=np.zeros((n_chans,)), lambda_=lambda_)
+    expected_repr = "<SpatialFilter | lambda=0.5 | 10 channels>"
     assert repr(sf) == expected_repr, "repr without name"
 
     # Test __repr__ with name
     sf.name = name
-    expected_repr = "<SpatialFilter | mylabel | alpha=0.5 | 10 channels>"
+    expected_repr = "<SpatialFilter | mylabel | lambda=0.5 | 10 channels>"
     assert repr(sf) == expected_repr, "repr with name"
 
 
@@ -35,7 +35,7 @@ def test_spatialfilter_apply():
     data = np.eye(n_chans)
 
     # test apply with data matrix
-    sf = SpatialFilter(w=w, alpha=0)
+    sf = SpatialFilter(w=w, lambda_=0)
     assert np.array_equal(sf.apply(data), w), "apply"
 
     # test apply with mne object containing the same data matrix
@@ -59,7 +59,7 @@ def test_spatialfilter_get_ctf(mode, normalize, expected):
     # ctf = [-3, 4] or [9, 16] for power and amplitude, respectively
     w = np.array([-1.0, 2.0])
     L = np.array([[3.0, 0.0], [0.0, 2.0]])
-    sf = SpatialFilter(w=w, alpha=0)
+    sf = SpatialFilter(w=w, lambda_=0)
     ctf = sf.get_ctf(L, mode=mode, normalize=normalize)
     assert np.allclose(ctf, expected, rtol=1e-6)
 
@@ -67,7 +67,7 @@ def test_spatialfilter_get_ctf(mode, normalize, expected):
 @patch("mne.viz.plot_topomap")
 def test_spatialfilter_plot(plot_topomap_fn):
     n_chans = 5
-    sf = SpatialFilter(w=np.zeros((n_chans,)), alpha=0)
+    sf = SpatialFilter(w=np.zeros((n_chans,)), lambda_=0)
     info = create_dummy_info(n_chans)
 
     # Check that mne.viz.plot_topomap was called
@@ -85,7 +85,7 @@ def test_spatialfilter_plot(plot_topomap_fn):
 
 def test_spatialfilter_plot_bad_info():
     n_chans = 5
-    sf = SpatialFilter(w=np.zeros((n_chans,)), alpha=0)
+    sf = SpatialFilter(w=np.zeros((n_chans,)), lambda_=0)
     info = create_dummy_info(n_chans - 1)  # does not match the filter
 
     with pytest.raises(ValueError):
@@ -99,7 +99,9 @@ def test_apply_batch():
     f = np.arange(n_filters) + 1
     data = np.eye(n_chans)
     expected = f[:, np.newaxis] @ w[np.newaxis, :]
-    filters = [SpatialFilter(w=w * i, alpha=0) for i in range(1, n_filters + 1)]
+    filters = [
+        SpatialFilter(w=w * i, lambda_=0) for i in range(1, n_filters + 1)
+    ]
 
     # test batch apply to the data matrix
     assert np.array_equal(apply_batch(data, filters), expected), "apply_batch"

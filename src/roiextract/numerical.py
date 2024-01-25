@@ -46,23 +46,23 @@ def _ctf_homogeneity(w, L, P0, mask):
     return (-1) * F, (-1) * dF
 
 
-def _ctf_compromise(w, L, P0, mask, alpha):
+def _ctf_compromise(w, L, P0, mask, lambda_):
     F_hom, dF_hom = _ctf_homogeneity(w, L, P0, mask)
     F_rat, dF_rat = _ctf_ratio(w, L, mask)
 
-    F = alpha * F_hom + (1 - alpha) * F_rat
-    dF = alpha * dF_hom + (1 - alpha) * dF_rat
+    F = lambda_ * F_hom + (1 - lambda_) * F_rat
+    dF = lambda_ * dF_hom + (1 - lambda_) * dF_rat
 
     return F, dF
 
 
 def ctf_optimize_ratio_homogeneity(
-    leadfield, template, mask, alpha, x0, return_scipy=False, **kwargs
+    leadfield, template, mask, lambda_, x0, return_scipy=False, **kwargs
 ):
     result = minimize(
         _ctf_compromise,
         x0,
-        args=(leadfield, template, mask, alpha),
+        args=(leadfield, template, mask, lambda_),
         jac=True,
         **kwargs,
     )
