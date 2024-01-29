@@ -17,47 +17,64 @@ def create_data():
 
 
 @pytest.mark.parametrize(
-    "mask,expected_ratio",
+    "mask,source_mask,expected_ratio",
     [
-        [np.array([True, False, False, False]), np.sqrt(0.1)],
-        [np.array([True, True, False, False]), np.sqrt(0.2)],
-        [np.array([False, True, True, False]), np.sqrt(0.5)],
-        [np.array([True, True, True, True]), 1.0],
+        [np.array([True, False, False, False]), None, np.sqrt(0.1)],
+        [np.array([True, True, False, False]), None, np.sqrt(0.2)],
+        [np.array([False, True, True, False]), None, np.sqrt(0.5)],
+        [np.array([True, True, True, True]), None, 1.0],
+        [
+            np.array([False, True, True, False]),
+            np.array([False, True, False, True]),
+            np.sqrt(0.2),
+        ],
     ],
 )
-def test_ctf_ratio(mask, expected_ratio):
+def test_ctf_ratio(mask, source_mask, expected_ratio):
     w, L = create_data()
-    ratio = ctf_ratio(w, L, mask)
+    ratio = ctf_ratio(w, L, mask, source_mask=source_mask)
     assert np.allclose(ratio, expected_ratio, rtol=1e-6)
 
 
 @pytest.mark.parametrize(
-    "mask,w0,expected_similarity",
+    "mask,w0,source_mask,expected_similarity",
     [
-        [np.array([True, True, False, False]), np.array([1, 1]), 1.0],
-        [np.array([True, True, False, False]), np.array([10, 10]), 1.0],
-        [np.array([True, True, False, False]), np.array([1, -1]), 0.0],
-        [np.array([False, True, True, False]), np.array([1, 2]), 1.0],
+        [np.array([True, True, False, False]), np.array([1, 1]), None, 1.0],
+        [np.array([True, True, False, False]), np.array([10, 10]), None, 1.0],
+        [np.array([True, True, False, False]), np.array([1, -1]), None, 0.0],
+        [np.array([False, True, True, False]), np.array([1, 2]), None, 1.0],
+        [
+            np.array([False, True, True, False]),
+            np.array([1, 1]),
+            np.array([False, False, True, True]),
+            1.0,
+        ],
     ],
 )
-def test_ctf_similarity(mask, w0, expected_similarity):
+def test_ctf_similarity(mask, w0, source_mask, expected_similarity):
     w, L = create_data()
-    similarity = ctf_similarity(w, L, w0, mask)
+    similarity = ctf_similarity(w, L, w0, mask, source_mask=source_mask)
     assert np.allclose(similarity, expected_similarity, rtol=1e-6)
 
 
 @pytest.mark.parametrize(
-    "mask,P0,expected_homogeneity",
+    "mask,P0,source_mask,expected_homogeneity",
     [
-        [np.array([True, True, False, False]), np.array([1, 1]), 1.0],
-        [np.array([True, True, False, False]), np.array([10, 10]), 1.0],
-        [np.array([True, True, False, False]), np.array([1, -1]), 0.0],
-        [np.array([False, True, True, False]), np.array([1, 4]), 1.0],
+        [np.array([True, True, False, False]), np.array([1, 1]), None, 1.0],
+        [np.array([True, True, False, False]), np.array([10, 10]), None, 1.0],
+        [np.array([True, True, False, False]), np.array([1, -1]), None, 0.0],
+        [np.array([False, True, True, False]), np.array([1, 4]), None, 1.0],
+        [
+            np.array([False, True, True, False]),
+            np.array([1, 1]),
+            np.array([False, False, True, True]),
+            1.0,
+        ],
     ],
 )
-def test_ctf_homogeneity(mask, P0, expected_homogeneity):
+def test_ctf_homogeneity(mask, P0, source_mask, expected_homogeneity):
     w, L = create_data()
-    homogeneity = ctf_homogeneity(w, L, P0, mask)
+    homogeneity = ctf_homogeneity(w, L, P0, mask, source_mask=source_mask)
     assert np.allclose(homogeneity, expected_homogeneity, rtol=1e-6)
 
 
