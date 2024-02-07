@@ -4,7 +4,13 @@ import mne
 
 from typing import Collection
 
-from .utils import _check_input, data2stc
+from .utils import (
+    _check_input,
+    data2stc,
+    get_inverse_matrix,
+    get_label_mask,
+    get_aggregation_weights,
+)
 
 
 class SpatialFilter:
@@ -28,6 +34,27 @@ class SpatialFilter:
         result += f" | lambda={self.lambda_:.2g} | {self.w.size} channels>"
 
         return result
+
+    @classmethod
+    def from_inverse(
+        cls,
+        fwd,
+        inv,
+        label,
+        inv_method,
+        lambda_,
+        roi_method,
+        subject,
+        subjects_dir,
+    ):
+        src = fwd["src"]
+        mask = get_label_mask(label, src)
+        W = get_inverse_matrix(inv, fwd, inv_method, lambda_)
+        w_agg = get_aggregation_weights(
+            roi_method, label, src, subject, subjects_dir
+        )
+        w = w_agg @ W[mask, :]
+        return cls(w, lambda_=lambda_, name=f"{label.name}_{inv_method}")
 
     def apply(self, data: npt.ArrayLike) -> np.array:
         # TODO: check that the first dimension of data is suitable

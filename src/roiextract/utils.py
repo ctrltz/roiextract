@@ -52,3 +52,26 @@ def data2stc(data, src, subject=None):
     return mne.SourceEstimate(
         data=data, vertices=vertno, tmin=0, tstep=0.01, subject=subject
     )
+
+
+def get_inverse_matrix(inv, fwd, method, lambda_):
+    # TODO: get rid of private dependency
+    from mne.minimum_norm.resolution_matrix import (
+        _get_matrix_from_inverse_operator,
+    )
+
+    return _get_matrix_from_inverse_operator(inv, fwd, method, lambda2=lambda_)
+
+
+def get_aggregation_weights(method, label, src, subject, subjects_dir):
+    _check_input("method", method, ["mean", "mean_flip", "centroid"])
+    if method in ["mean", "mean_flip"]:
+        return resolve_template(method, label, src)
+
+    # find the center of mass
+    hemi_idx = 0 if label.hemi == "lh" else 1
+    label_vertices = label.get_vertices_used(src[hemi_idx]["vertno"])
+    centroid_idx = label.center_of_mass(
+        subject=subject, restrict_vertices=src, subjects_dir=subjects_dir
+    )
+    return (label_vertices == centroid_idx).astype(int)
