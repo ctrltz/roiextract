@@ -5,7 +5,7 @@ from scipy.linalg import eig
 
 
 def ctf_optimize_ratio_similarity(
-    leadfield, template, mask, lambda_, reg=0.000001
+    leadfield, template, mask, lambda_, regA=0.001, regB=0.001
 ):
     """
     Optimize a linear combination of similarity with a template CTF and
@@ -25,8 +25,8 @@ def ctf_optimize_ratio_similarity(
     lambda_: float
         If 0, only ratio is optimized. If 1, only similarity. Values in between
         allow tweaking the balance between optimization for similarity or ratio.
-    reg: float
-        Regularization parameter to ensure that it is possible to calculate the
+    regA, regB: float
+        Regularization parameters to ensure that it is possible to calculate the
         inverse matrices.
 
     Returns
@@ -60,9 +60,9 @@ def ctf_optimize_ratio_similarity(
     A_rat = L_out @ L_out.T
     A_sim = L_in @ (template.T @ template) @ L_in.T
     A = (1 - lambda_) * A_rat - lambda_ * A_sim
-    A_reg = A + reg * np.trace(A) * np.eye(*A.shape) / A.shape[0]
+    A_reg = A + regA * np.trace(A) * np.eye(*A.shape) / A.shape[0]
     B = L_in @ L_in.T
-    B_reg = B + reg * np.trace(B) * np.eye(*B.shape) / B.shape[0]
+    B_reg = B + regB * np.trace(B) * np.eye(*B.shape) / B.shape[0]
     [eigvals, eigvecs] = eig(A_reg, B_reg)
 
     # Get the eigenvector that corresponds to the smallest eigenvalue

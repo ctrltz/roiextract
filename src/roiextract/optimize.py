@@ -56,8 +56,9 @@ def ctf_optimize(
     mode="similarity",
     criteria="rat",
     threshold=None,
+    initial="auto",
     tol=0.001,
-    reg=0.000001,
+    reg=0.001,
     quantify=False,
     name="",
 ):
@@ -97,6 +98,7 @@ def ctf_optimize(
         If provided lambda_ value is out of [0, 1] range.
     """
     _check_input("mode", mode, ["similarity", "homogeneity"])
+    _check_input("initial", initial, ["auto", "ones", "reg"])
     if lambda_ == "auto" and threshold is None:
         raise ValueError("Threshold should be set if lambda_='auto' is used")
 
@@ -113,13 +115,26 @@ def ctf_optimize(
             ctf_quantify, leadfield=leadfield, mask=mask, w0=template
         )
     else:
-        x0 = np.ones((leadfield.shape[0],))
+        # Setup the initial guess for numerical optimization
+        initial = ["ones", "reg"] if initial == "auto" else [initial]
+        x0s = []
+        if "ones" in initial:
+            x0_ones = np.ones((leadfield.shape[0],))
+            x0s.append(x0_ones)
+        if "reg" in initial:
+            # TODO: find some alternative to this formula (change lambda?)
+            regA = 0.1 if lambda_ == "auto" else np.exp(10 * lambda_**2 - 10)
+            x0_reg = ctf_optimize_ratio_similarity(
+                leadfield, template, mask, lambda_=0, regA=regA, regB=reg
+            )
+            x0s.append(x0_reg)
+
         opt_func = partial(
             ctf_optimize_ratio_homogeneity,
             leadfield=leadfield,
             template=template,
             mask=mask,
-            x0=x0,
+            x0s=x0s,
         )
         quant_func = partial(
             ctf_quantify, leadfield=leadfield, mask=mask, P0=template
@@ -153,8 +168,9 @@ def ctf_optimize_label(
     mode="similarity",
     criteria="rat",
     threshold=None,
+    initial="auto",
     tol=0.001,
-    reg=0.00001,
+    reg=0.001,
     quantify=False,
     name=None,
 ):
@@ -179,6 +195,7 @@ def ctf_optimize_label(
         mode=mode,
         criteria=criteria,
         threshold=threshold,
+        initial=initial,
         tol=tol,
         reg=reg,
         quantify=quantify,
@@ -196,7 +213,7 @@ def rec_optimize(
     criteria="rat",
     threshold=None,
     tol=0.001,
-    reg=0.00001,
+    reg=0.001,
     quantify=False,
     name="",
 ):
@@ -226,7 +243,7 @@ def rec_optimize_label(
     criteria="rat",
     threshold=None,
     tol=0.001,
-    reg=0.00001,
+    reg=0.001,
     quantify=False,
     name=None,
     **inv_kwargs,

@@ -56,12 +56,22 @@ def _ctf_compromise(w, L, P0, mask, lambda_):
     return F, dF
 
 
+def minimize_with_several_guesses(fun, x0s, args, **kwargs):
+    solutions = {}
+    for x0 in x0s:
+        result = minimize(fun, x0, args=args, **kwargs)
+        solutions[result.fun] = result
+
+    best_result = min(list(solutions.keys()))
+    return solutions[best_result]
+
+
 def ctf_optimize_ratio_homogeneity(
-    leadfield, template, mask, lambda_, x0, return_scipy=False, **kwargs
+    leadfield, template, mask, lambda_, x0s, return_scipy=False, **kwargs
 ):
-    result = minimize(
+    result = minimize_with_several_guesses(
         _ctf_compromise,
-        x0,
+        x0s,
         args=(leadfield, template, mask, lambda_),
         jac=True,
         **kwargs,
