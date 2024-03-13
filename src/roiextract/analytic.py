@@ -43,7 +43,7 @@ def ctf_optimize_ratio_similarity(
         raise ValueError("Value of lambda_ should lie in [0, 1] range")
 
     # Make sure w0 is a row vector with unit length
-    template = np.squeeze(template)
+    template = np.atleast_1d(np.squeeze(template))
     if template.ndim > 1:
         raise ValueError(
             f"Template weights should be a vector, got "

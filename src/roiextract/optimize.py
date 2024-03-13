@@ -109,7 +109,7 @@ def ctf_optimize(
             leadfield=leadfield,
             template=template,
             mask=mask,
-            reg=reg,
+            regA=reg,
         )
         quant_func = partial(
             ctf_quantify, leadfield=leadfield, mask=mask, w0=template
