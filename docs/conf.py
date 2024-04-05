@@ -19,6 +19,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.duration",
     "sphinx.ext.napoleon",
+    "sphinx_copybutton",
 ]
 
 templates_path = ["_templates"]
@@ -30,3 +31,9 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+
+
+# -- Copybutton settings -----------------------------------------------------
+# https://sphinx-copybutton.readthedocs.io/en/latest/use.html#strip-and-configure-input-prompts-for-code-cells
+
+copybutton_exclude = ".linenos, .gp"
