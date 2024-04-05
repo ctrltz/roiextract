@@ -8,6 +8,9 @@ build/
 .pytest_cache/
 .ruff_cache/
 
+# Docs
+docs/source/generated/
+
 # Tests
 .coverage
 
