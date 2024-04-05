@@ -54,13 +54,13 @@ def data2stc(data, src, subject=None):
     )
 
 
-def get_inverse_matrix(inv, fwd, method, lambda_):
+def get_inverse_matrix(inv, fwd, method, lambda2):
     # TODO: get rid of private dependency
     from mne.minimum_norm.resolution_matrix import (
         _get_matrix_from_inverse_operator,
     )
 
-    return _get_matrix_from_inverse_operator(inv, fwd, method, lambda2=lambda_)
+    return _get_matrix_from_inverse_operator(inv, fwd, method, lambda2)
 
 
 def get_aggregation_weights(method, label, src, subject, subjects_dir):

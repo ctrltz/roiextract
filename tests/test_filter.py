@@ -15,18 +15,27 @@ def create_dummy_info(n_chans):
 
 def test_spatialfilter_repr():
     n_chans = 10
-    lambda_ = 0.5
     name = "mylabel"
+    method = "mymethod"
+    method_params = dict(lambda2=0.001)
 
     # Test __repr__ with no name set
-    sf = SpatialFilter(w=np.zeros((n_chans,)), lambda_=lambda_)
-    expected_repr = "<SpatialFilter | lambda=0.5 | 10 channels>"
-    assert repr(sf) == expected_repr, "repr without name"
+    sf = SpatialFilter(w=np.zeros((n_chans,)))
+    expected_repr = "<SpatialFilter | 10 channels>"
+    assert repr(sf) == expected_repr, "repr without name and method"
 
     # Test __repr__ with name
     sf.name = name
-    expected_repr = "<SpatialFilter | mylabel | lambda=0.5 | 10 channels>"
-    assert repr(sf) == expected_repr, "repr with name"
+    expected_repr = "<SpatialFilter | mylabel | 10 channels>"
+    assert repr(sf) == expected_repr, "repr with name but not method"
+
+    # Test __repr__ with name and method
+    sf.method = method
+    sf.method_params = method_params
+    expected_repr = (
+        "<SpatialFilter | mylabel | mymethod (lambda2=0.001) | 10 channels>"
+    )
+    assert repr(sf) == expected_repr, "repr with name and method"
 
 
 def test_spatialfilter_apply():

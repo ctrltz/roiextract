@@ -15,10 +15,15 @@ from .utils import (
 
 class SpatialFilter:
     def __init__(
-        self, w: npt.ArrayLike, lambda_: float, name: str = ""
+        self,
+        w: npt.ArrayLike,
+        method: str = "",
+        method_params: dict = dict(),
+        name: str = "",
     ) -> None:
         self.w = w
-        self.lambda_ = lambda_
+        self.method = method
+        self.method_params = method_params
         self.name = name
 
     def __repr__(self) -> str:
@@ -26,12 +31,17 @@ class SpatialFilter:
         Generate a short description for the filter in the following form:
         ([x] - only added if present)
 
-        <SpatialFilter | [name] | lambda=X | XX channels>
+        <SpatialFilter | [name] | [method (method_params)] | XX channels>
         """
         result = "<SpatialFilter"
         if self.name:
             result += f" | {self.name}"
-        result += f" | lambda={self.lambda_:.2g} | {self.w.size} channels>"
+        if self.method:
+            params_str = [f"{k}={v}" for k, v in self.method_params.items()]
+            params_str = ", ".join(params_str)
+            params_str = f" ({params_str})" if params_str else ""
+            result += f" | {self.method}{params_str}"
+        result += f" | {self.w.size} channels>"
 
         return result
 
@@ -42,19 +52,24 @@ class SpatialFilter:
         inv,
         label,
         inv_method,
-        lambda_,
+        lambda2,
         roi_method,
         subject,
         subjects_dir,
     ):
         src = fwd["src"]
         mask = get_label_mask(label, src)
-        W = get_inverse_matrix(inv, fwd, inv_method, lambda_)
+        W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
         w_agg = get_aggregation_weights(
             roi_method, label, src, subject, subjects_dir
         )
         w = w_agg @ W[mask, :]
-        return cls(w, lambda_=lambda_, name=f"{label.name}_{inv_method}")
+        return cls(
+            w,
+            method=f"{inv_method}+{roi_method}",
+            method_params=dict(lambda2=lambda2),
+            name=label.name,
+        )
 
     def apply(self, data: npt.ArrayLike) -> np.array:
         # TODO: check that the first dimension of data is suitable
