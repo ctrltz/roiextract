@@ -9,7 +9,8 @@ build/
 .ruff_cache/
 
 # Docs
-docs/source/generated/
+_build/
+docs/generated/
 
 # Tests
 .coverage
