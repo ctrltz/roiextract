@@ -26,11 +26,15 @@ jobs:
         run: |
           make html
 
+      - name: Move the generated HTML files
+        run: |
+          cp -a _build/html/ _publish/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/docs' }}
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/
+          publish_dir: _publish/
           force_orphan: true
