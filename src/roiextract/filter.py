@@ -14,6 +14,21 @@ from .utils import (
 
 
 class SpatialFilter:
+    """
+    Convenience wrapper around a NumPy array that contains the spatial filter.
+
+    Parameters:
+    -----------
+    w: array_like, shape (n_channels,)
+        The weights of the spatial filter.
+    method: str, optional
+        Can be used to store the name of the method that was used to obtain the filter.
+    method_params: dict, optional
+        Can be used to store key parameters of the method for obtaining the filter.
+    name: str, optional
+        Can be used to add a unique name to the filter (e.g., name of the ROI).
+    """
+
     def __init__(
         self,
         w: npt.ArrayLike,
@@ -65,7 +80,7 @@ class SpatialFilter:
         )
         w = w_agg @ W[mask, :]
         return cls(
-            w,
+            np.atleast_1d(np.squeeze(w)),
             method=f"{inv_method}+{roi_method}",
             method_params=dict(lambda2=lambda2),
             name=label.name,

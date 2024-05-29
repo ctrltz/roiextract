@@ -18,6 +18,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.duration",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
 ]
@@ -37,3 +38,20 @@ html_static_path = ["_static"]
 # https://sphinx-copybutton.readthedocs.io/en/latest/use.html#strip-and-configure-input-prompts-for-code-cells
 
 copybutton_exclude = ".linenos, .gp"
+
+
+# -- Autodoc settings --------------------------------------------------------
+
+autodoc_typing_aliases = {
+    "ArrayLike": "numpy.typing.ArrayLike",
+}
+
+
+# -- Intersphinx settings ----------------------------------------------------
+
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+
+
+# -- Napoleon settings -------------------------------------------------------
+
+napoleon_numpy_docstring = True
