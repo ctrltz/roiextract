@@ -152,7 +152,12 @@ def ctf_optimize(
     # Optimize the filter, normalize and quantify its properties if needed
     w_opt = opt_func(lambda_=lambda_)
     w_opt = w_opt / np.abs(w_opt).max()
-    sf = SpatialFilter(w=w_opt, lambda_=lambda_, name=name)
+    sf = SpatialFilter(
+        w=w_opt,
+        method="ctf_optimize",
+        method_params=dict(lambda_=lambda_),
+        name=name,
+    )
     if quantify:
         props = quant_func(w=w_opt)
         return sf, props
