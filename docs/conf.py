@@ -9,7 +9,7 @@
 project = "ROIextract"
 copyright = "2024, Nikolai Kapralov"
 author = "Nikolai Kapralov"
-release = "0.0.2"
+release = "0.0.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
