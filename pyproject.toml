@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "roiextract"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
     { name="Nikolai Kapralov", email="kapralov@cbs.mpg.de" }
 ]
-description = "Data-independent and data-driven optimization of extraction of ROI time series based on M/EEG"
+description = "Data-independent and data-driven optimization of spatial filters for extraction of ROI time series based on M/EEG"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [

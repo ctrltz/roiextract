@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.0.3 - May 29th, 2024
+
+### Added
+
+* Support for source space mask to consider only a subset of source in all CTF calculations
+* Use of several initial guesses for improving the numerical optimization
+* Support of the corner case of ROIs consisting of a single source
+* First sketches of documentation, still very much work in progress
+
+### Changed
+
+* Fields of the SpatialFilter now have higher flexibility in describing the method for obtaining the spatial filter
 
 ## 0.0.2 - January 25th, 2024
 
