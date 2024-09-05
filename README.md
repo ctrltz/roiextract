@@ -8,7 +8,7 @@ TODO
 
 ## Prerequisites
 
-The toolbox is designed to be compatible with [MNE-Python]() as much as possible, and optimization only requires:
+The toolbox is designed to be compatible with [MNE-Python](https://mne.tools/stable/index.html), and optimization only requires:
 
 * `fwd: mne.Forward` - the description of the forward model
 * `label: mne.Label` - the description of the region of interest (parcel/label)
