@@ -1,4 +1,0 @@
-numpy
-mne
-pre-commit
-scipy

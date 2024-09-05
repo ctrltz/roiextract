@@ -26,6 +26,19 @@ dependencies = [
 "Homepage" = "https://github.com/ctrltz/roiextract"
 "Bug Tracker" = "https://github.com/ctrltz/roiextract/issues"
 
+[project.optional-dependencies]
+dev = [
+    "mock",
+    "pre-commit",
+    "pytest",
+    "pytest-cov"
+]
+docs = [
+    "furo",
+    "sphinx",
+    "sphinx-copybutton"
+]
+
 [tool.ruff]
 line-length = 80
 indent-width = 4
