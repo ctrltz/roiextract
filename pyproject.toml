@@ -34,7 +34,7 @@ dev = [
     "pytest-cov"
 ]
 docs = [
-    "furo",
+    "pydata-sphinx-theme",
     "sphinx",
     "sphinx-copybutton"
 ]
