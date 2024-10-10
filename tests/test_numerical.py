@@ -85,14 +85,14 @@ def test_ctf_optimize_ratio_homogeneity():
     leadfield = np.array([[1, 1, 0, 0], [0, 0, 1, 1]])
     mask = np.array([True, True, False, False])
     template = np.array([1, 1])
-    x0 = np.array([1, 1])
+    x0s = [np.array([1, 1])]
 
     result = ctf_optimize_ratio_homogeneity(
-        leadfield, template, mask, lambda_=0, x0=x0, return_scipy=False
+        leadfield, template, mask, lambda_=0, x0s=x0s, return_scipy=False
     )
     assert isinstance(result, np.ndarray)
 
     result = ctf_optimize_ratio_homogeneity(
-        leadfield, template, mask, lambda_=0, x0=x0, return_scipy=True
+        leadfield, template, mask, lambda_=0, x0s=x0s, return_scipy=True
     )
     assert isinstance(result, OptimizeResult)
