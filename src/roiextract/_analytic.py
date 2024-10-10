@@ -1,7 +1,55 @@
+"""
+Helper functions for analytic solutions
+"""
+
 import numpy as np
 
 from numpy.linalg import norm
 from scipy.linalg import eig
+
+
+def _ctf_ratio_ged_matrices(leadfield, label_mask, source_cov=None):
+    # Split the lead field matrix into in and out parts
+    L_in = leadfield[:, label_mask]
+    L_out = leadfield[:, ~label_mask]
+
+    # Prepare matrices for the generalized eigenvalue problem
+    if source_cov is None:
+        A = L_out @ L_out.T
+        B = L_in @ L_in.T
+
+        return A, B
+
+    # Split the source covariance matrix into in and out parts
+    # TODO
+    A = L_out @ source_cov @ L_out.T
+    B = L_in @ source_cov @ L_in.T
+
+    return A, B
+
+
+# def _ctf_similarity_ged_matrices(leadfield, label_mask, ctf_template):
+#     # Split the lead field matrix into in and out parts
+#     L_in = leadfield[:, label_mask]
+#     L_out = leadfield[:, ~label_mask]
+
+#     A = None
+#     B = None
+
+#     # Prepare matrices for the generalized eigenvalue problem
+#     return A, B
+
+
+def _solve_ged(A, B):
+    [eigvals, eigvecs] = eig(A, B)
+
+    # Get the eigenvector that corresponds to the smallest eigenvalue
+    w = eigvecs[:, eigvals.argmin()]
+
+    # Normalize the filter
+    w /= norm(w)
+
+    return w
 
 
 def ctf_optimize_ratio_similarity(

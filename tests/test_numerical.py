@@ -3,7 +3,7 @@ import numpy as np
 from mock import patch
 from scipy.optimize import OptimizeResult
 
-from roiextract.numerical import (
+from roiextract._numerical import (
     _ctf_ratio,
     _ctf_homogeneity,
     _ctf_compromise,

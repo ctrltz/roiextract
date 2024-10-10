@@ -1,13 +1,17 @@
+"""
+Helper functions for numerical optimization
+"""
+
 import numpy as np
 
 from numpy.linalg import norm
 from scipy.optimize import minimize
 
 
-def _ctf_ratio(w, L, mask):
+def _ctf_ratio_loss(w, leadfield, mask):
     # Split the leadfield into within and outside parts
-    L_in = L[:, mask]
-    L_out = L[:, ~mask]
+    L_in = leadfield[:, mask]
+    L_out = leadfield[:, ~mask]
 
     ctf_out = np.squeeze(w @ L_out)
     ctf_in = np.squeeze(w @ L_in)
@@ -22,7 +26,7 @@ def _ctf_ratio(w, L, mask):
     return F, dF
 
 
-def _ctf_homogeneity(w, L, P0, mask):
+def _ctf_homogeneity_loss(w, L, P0, mask):
     # Use only voxels within the mask
     L_in = L[:, mask]
 
@@ -46,9 +50,9 @@ def _ctf_homogeneity(w, L, P0, mask):
     return (-1) * F, (-1) * dF
 
 
-def _ctf_compromise(w, L, P0, mask, lambda_):
-    F_hom, dF_hom = _ctf_homogeneity(w, L, P0, mask)
-    F_rat, dF_rat = _ctf_ratio(w, L, mask)
+def _ctf_ratio_homogeneity_loss(w, L, P0, mask, lambda_):
+    F_hom, dF_hom = _ctf_homogeneity_loss(w, L, P0, mask)
+    F_rat, dF_rat = _ctf_ratio_loss(w, L, mask)
 
     F = lambda_ * F_hom + (1 - lambda_) * F_rat
     dF = lambda_ * dF_hom + (1 - lambda_) * dF_rat
@@ -56,27 +60,13 @@ def _ctf_compromise(w, L, P0, mask, lambda_):
     return F, dF
 
 
-def minimize_with_several_guesses(fun, x0s, args, **kwargs):
-    solutions = {}
+def _minimize_with_several_guesses(fun, x0s, args, **kwargs):
+    best_result = None
     for x0 in x0s:
         result = minimize(fun, x0, args=args, **kwargs)
-        solutions[result.fun] = result
 
-    best_result = min(list(solutions.keys()))
-    return solutions[best_result]
+        # Update if the loss is better than obtained before
+        if best_result is None or result.fun < best_result.fun:
+            best_result = result
 
-
-def ctf_optimize_ratio_homogeneity(
-    leadfield, template, mask, lambda_, x0s, return_scipy=False, **kwargs
-):
-    result = minimize_with_several_guesses(
-        _ctf_compromise,
-        x0s,
-        args=(leadfield, template, mask, lambda_),
-        jac=True,
-        **kwargs,
-    )
-    if return_scipy:
-        return result
-
-    return result.x
+    return best_result

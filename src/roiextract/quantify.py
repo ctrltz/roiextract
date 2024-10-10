@@ -2,30 +2,36 @@ import numpy as np
 
 from numpy.linalg import norm
 
-from .utils import resolve_template, get_label_mask
+from ._prepare import prepare_inputs
+from .utils import resolve_template, get_label_mask, _check_input
 
 
-def ctf_ratio(w, L, mask, source_mask=None):
+def ctf_ratio(w, fwd, label, source_mask=None, kind="power"):
     """
     Calculates ratio of CTF outside/within ROI
     """
+    _check_input("kind", kind, ["power", "amplitude"])
+    leadfield, label_mask, _, _ = prepare_inputs(fwd, label)
 
     # Take into account only a subset of sources if source mask is provided
-    L_all = L.copy()
+    L = leadfield.copy()
     if source_mask is not None:
-        mask = np.logical_and(mask, source_mask)
-        L_all = L[:, source_mask]
-
-    # TODO: check that the mask contains at least one source
+        label_mask = np.logical_and(label_mask, source_mask)
+        L = leadfield[:, source_mask]
 
     # Split lead field matrix into in and out parts
-    L_in = L[:, mask]
+    L_in = leadfield[:, label_mask]
 
-    ctf_all = np.squeeze(w @ L_all)
+    # Compute the CTF
+    ctf_all = np.squeeze(w @ L)
     ctf_in = np.squeeze(w @ L_in)
 
-    # Adjusted value in the [0, 1] range
-    return norm(ctf_in) / norm(ctf_all)
+    # Compute the CTF ratio
+    ratio = norm(ctf_in) / norm(ctf_all)
+    if kind == "power":
+        return ratio**2
+
+    return ratio
 
 
 def ctf_similarity(w, L, w0, mask, source_mask=None):
