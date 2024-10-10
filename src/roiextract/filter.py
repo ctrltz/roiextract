@@ -1,8 +1,5 @@
 import numpy as np
-import numpy.typing as npt
 import mne
-
-from typing import Collection
 
 from .utils import (
     _check_input,
@@ -31,10 +28,10 @@ class SpatialFilter:
 
     def __init__(
         self,
-        w: npt.ArrayLike,
-        method: str = "",
-        method_params: dict = dict(),
-        name: str = "",
+        w,
+        method="",
+        method_params=dict(),
+        name="",
     ) -> None:
         self.w = w
         self.method = method
@@ -86,18 +83,18 @@ class SpatialFilter:
             name=label.name,
         )
 
-    def apply(self, data: npt.ArrayLike) -> np.array:
+    def apply(self, data) -> np.array:
         # TODO: check that the first dimension of data is suitable
         return self.w @ data
 
-    def apply_raw(self, raw: mne.io.Raw | mne.io.RawArray) -> np.array:
+    def apply_raw(self, raw) -> np.array:
         return self.apply(raw.get_data())
 
     def get_ctf(
         self,
-        L: npt.ArrayLike,
-        mode: str = "power",
-        normalize: str | None = "sum",
+        L,
+        mode="power",
+        normalize="sum",
     ) -> np.array:
         _check_input("mode", mode, ["power", "amplitude"])
         _check_input("normalize", normalize, ["norm", "max", "sum", None])
@@ -118,10 +115,10 @@ class SpatialFilter:
 
     def get_ctf_fwd(
         self,
-        fwd: mne.Forward,
-        mode: str = "power",
-        normalize: str = "norm",
-        subject: str | None = None,
+        fwd,
+        mode="power",
+        normalize="norm",
+        subject=None,
     ) -> mne.SourceEstimate:
         leadfield = fwd["sol"]["data"]
         src = fwd["src"]
@@ -129,7 +126,7 @@ class SpatialFilter:
             self.get_ctf(leadfield, mode, normalize), src, subject=subject
         )
 
-    def plot(self, info: mne.Info, **topomap_kwargs):
+    def plot(self, info, **topomap_kwargs):
         # Make sure that the provided info has the correct amount of channels
         n_chans_filter = self.w.size
         n_chans_info = len(info["ch_names"])
@@ -143,12 +140,12 @@ class SpatialFilter:
         return mne.viz.plot_topomap(w, info, **topomap_kwargs)
 
 
-def apply_batch(data, filters: Collection[SpatialFilter]) -> np.array:
+def apply_batch(data, filters) -> np.array:
     # TODO: check that all filters have the same number of channels
     # TODO: check that the first dimension of data is suitable
     w = np.vstack([sf.w[np.newaxis, :] for sf in filters])
     return w @ data
 
 
-def apply_batch_raw(raw, filters: Collection[SpatialFilter]) -> np.array:
+def apply_batch_raw(raw, filters) -> np.array:
     return apply_batch(raw.get_data(), filters)
