@@ -1,0 +1,6 @@
+﻿roiextract.optimize.ctf\_optimize
+=================================
+
+.. currentmodule:: roiextract.optimize
+
+.. autofunction:: ctf_optimize
