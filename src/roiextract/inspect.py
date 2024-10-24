@@ -14,6 +14,12 @@ class OptimizationCurve:
         self.template = template
         self._reset()
 
+    def _reset(self):
+        self.filters = None
+        self.lambdas = None
+        self._xs = None
+        self._ys = None
+
     @property
     def homs(self):
         if self.mode == "similarity":
@@ -132,9 +138,3 @@ class OptimizationCurve:
         logger.debug(f"_optim_curve_loss | {ys} | {dist}")
 
         return dist
-
-    def _reset(self):
-        self.filters = None
-        self.lambdas = None
-        self._xs = None
-        self._ys = None
