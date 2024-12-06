@@ -1,0 +1,6 @@
+﻿roiextract.filter.apply\_batch
+==============================
+
+.. currentmodule:: roiextract.filter
+
+.. autofunction:: apply_batch
