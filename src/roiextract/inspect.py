@@ -1,17 +1,20 @@
 import adaptive
 import numpy as np
 
-from .optimize import ctf_optimize_label
-from .utils import _check_input, logger
+from copy import deepcopy
+
+from roiextract.optimize import ctf_optimize_label
+from roiextract.utils import _check_input, logger
 
 
 class OptimizationCurve:
-    def __init__(self, fwd, label, mode, template):
+    def __init__(self, fwd, label, mode, template, sampling_limit=0.0001):
         _check_input("mode", mode, ["homogeneity", "similarity"])
         self.fwd = fwd
         self.label = label
         self.mode = mode
         self.template = template
+        self.sampling_limit = sampling_limit
         self._reset()
 
     def _reset(self):
@@ -19,6 +22,9 @@ class OptimizationCurve:
         self.lambdas = None
         self._xs = None
         self._ys = None
+
+    def copy(self):
+        return deepcopy(self)
 
     @property
     def homs(self):
@@ -66,16 +72,18 @@ class OptimizationCurve:
         self._get_sampled_values(learner)
         self._get_filters()
 
+        return self
+
     def sample_homogeneous(self, n_points):
         self._reset()
         self.filters = []
         self.lambdas = np.linspace(0, 1, num=n_points)
-        self.xs = np.zeros((n_points,))
-        self.ys = np.zeros((n_points,))
+        self._xs = np.zeros((n_points,))
+        self._ys = np.zeros((n_points,))
 
         for i, lmbd in enumerate(self.lambdas):
             result = self._sample(lmbd)
-            self.xs[i], self.ys[i] = result
+            self._xs[i], self._ys[i] = result
         self._get_filters()
 
         return self
@@ -133,7 +141,12 @@ class OptimizationCurve:
 
         if len(ys) < 2:
             return 0
-        dist = np.linalg.norm(ys[0] - ys[1])
+        lambda_dist = np.abs(xs[1] - xs[0])
+        plane_dist = np.linalg.norm(ys[0] - ys[1])
+        dist = np.maximum(lambda_dist, plane_dist)
+
+        if lambda_dist < self.sampling_limit:
+            return 0
 
         logger.debug(f"_optim_curve_loss | {ys} | {dist}")
 
