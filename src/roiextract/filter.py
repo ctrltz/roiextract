@@ -1,5 +1,6 @@
 import numpy as np
 import mne
+import warnings
 
 from .utils import (
     _check_input,
@@ -22,6 +23,8 @@ class SpatialFilter:
         Can be used to store the name of the method that was used to obtain the filter.
     method_params: dict, optional
         Can be used to store key parameters of the method for obtaining the filter.
+    ch_names: list or None, optional
+        Can be used to store names of the channels that the weights correspond to.
     name: str, optional
         Can be used to add a unique name to the filter (e.g., name of the ROI).
     """
@@ -31,11 +34,22 @@ class SpatialFilter:
         w,
         method="",
         method_params=dict(),
+        ch_names=None,
         name="",
     ) -> None:
+        if w.size != len(ch_names):
+            raise ValueError(
+                "The number of channel names should correspond to the number "
+                "of provided weights"
+            )
+
+        if len(set(ch_names)) != len(ch_names):
+            raise ValueError("All channel names should be unique.")
+
         self.w = w
         self.method = method
         self.method_params = method_params
+        self.ch_names = np.array(ch_names)
         self.name = name
 
     def __repr__(self) -> str:
@@ -57,6 +71,10 @@ class SpatialFilter:
 
         return result
 
+    @property
+    def size(self):
+        return self.w.size
+
     @classmethod
     def from_inverse(
         cls,
@@ -70,6 +88,7 @@ class SpatialFilter:
         subjects_dir,
     ):
         src = fwd["src"]
+        ch_names = fwd["info"]["ch_names"]
         mask = get_label_mask(label, src)
         W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
         w_agg = get_aggregation_weights(
@@ -80,15 +99,54 @@ class SpatialFilter:
             np.atleast_1d(np.squeeze(w)),
             method=f"{inv_method}+{roi_method}",
             method_params=dict(lambda2=lambda2),
+            ch_names=ch_names,
             name=label.name,
         )
 
-    def apply(self, data) -> np.array:
-        # TODO: check that the first dimension of data is suitable
-        return self.w @ data
+    def _align(self, raw_names=None):
+        if self.ch_names is None or raw_names is None:
+            warnings.warn(
+                "The filter or the provided data object does not contain the "
+                "information about channel names. "
+                "To obtain correct results, please ensure that the order of "
+                "the channels is the same for the filter and the M/EEG data."
+            )
+
+        raw_names = np.array(raw_names)
+        if raw_names.size != self.size:
+            raise ValueError(
+                "The number of channels in the provided data object is "
+                "different from the number of channels in the filter, "
+                "can't proceed."
+            )
+
+        if self.ch_names is None:
+            # The size is fine, but we don't have the information to reorder
+            # channels, use the original order
+            return np.arange((self.size,))
+
+        # Align the order of channels to match the provided data object
+        common, ind1, ind2 = np.intersect1d(
+            self.ch_names, raw_names, return_indices=True
+        )
+        if len(common) != len(raw_names):
+            missing = set(common) - set(raw_names)
+            raise ValueError(
+                f"The following channels are required to apply the filter but "
+                f"aren't present in the provided data object: {', '.join(missing)}. "
+            )
+
+        mapping = np.zeros((self.size,), dtype=int)
+        mapping[ind2] = ind1
+
+        return mapping
+
+    def apply(self, data, ch_names=None) -> np.array:
+        reorder = self._align(ch_names)
+        return self.w[np.newaxis, reorder] @ data
 
     def apply_raw(self, raw) -> np.array:
-        return self.apply(raw.get_data())
+        return self.apply(raw.get_data(), raw.ch_names)
 
     def get_ctf(
         self,
@@ -140,12 +198,14 @@ class SpatialFilter:
         return mne.viz.plot_topomap(w, info, **topomap_kwargs)
 
 
-def apply_batch(data, filters) -> np.array:
-    # TODO: check that all filters have the same number of channels
-    # TODO: check that the first dimension of data is suitable
-    w = np.vstack([sf.w[np.newaxis, :] for sf in filters])
+def apply_batch(data, filters, ch_names=None) -> np.array:
+    weights = []
+    for sf in filters:
+        reorder = sf._align(ch_names)
+        weights.append(sf.w[np.newaxis, reorder])
+    w = np.vstack(weights)
     return w @ data
 
 
 def apply_batch_raw(raw, filters) -> np.array:
-    return apply_batch(raw.get_data(), filters)
+    return apply_batch(raw.get_data(), filters, raw.ch_names)
