@@ -60,6 +60,7 @@ def ctf_optimize(
     tol=0.001,
     reg=0.001,
     quantify=False,
+    ch_names=None,
     name="",
 ):
     """
@@ -156,6 +157,7 @@ def ctf_optimize(
         w=w_opt,
         method="ctf_optimize",
         method_params=dict(lambda_=lambda_),
+        ch_names=ch_names,
         name=name,
     )
     if quantify:
@@ -182,6 +184,7 @@ def ctf_optimize_label(
     # Extract data from Forward and Label
     leadfield = fwd["sol"]["data"]
     src = fwd["src"]
+    ch_names = fwd["info"]["ch_names"]
     if name is None:
         name = label.name
 
@@ -204,6 +207,7 @@ def ctf_optimize_label(
         tol=tol,
         reg=reg,
         quantify=quantify,
+        ch_names=ch_names,
         name=name,
     )
 
@@ -220,6 +224,7 @@ def rec_optimize(
     tol=0.001,
     reg=0.001,
     quantify=False,
+    ch_names=None,
     name="",
 ):
     return ctf_optimize(
@@ -233,6 +238,7 @@ def rec_optimize(
         tol=tol,
         reg=reg,
         quantify=quantify,
+        ch_names=ch_names,
         name=name,
     )
 
@@ -259,6 +265,7 @@ def rec_optimize_label(
 
     # Extract data from Forward and Label
     src = fwd["src"]
+    ch_names = fwd["info"]["ch_names"]
     if name is None:
         name = label.name
 
@@ -284,5 +291,6 @@ def rec_optimize_label(
         tol=tol,
         reg=reg,
         quantify=quantify,
+        ch_names=ch_names,
         name=name,
     )

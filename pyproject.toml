@@ -40,6 +40,13 @@ docs = [
     "sphinx-copybutton"
 ]
 
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = [
+    "tests",
+]
+addopts = "--cov=src/roiextract --cov-report term-missing"
+
 [tool.ruff]
-line-length = 80
+line-length = 88
 indent-width = 4
