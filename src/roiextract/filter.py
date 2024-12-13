@@ -37,7 +37,22 @@ class SpatialFilter:
         ch_names=None,
         name="",
     ) -> None:
-        if w.size != len(ch_names):
+        self.w = np.squeeze(np.array(w))
+        self.method = method
+        self.method_params = method_params
+        self._validate_ch_names(ch_names)
+        self.name = name
+
+    @property
+    def size(self):
+        return self.w.size
+
+    def _validate_ch_names(self, ch_names):
+        self.ch_names = None
+        if ch_names is None:
+            return
+
+        if self.size != len(ch_names):
             raise ValueError(
                 "The number of channel names should correspond to the number "
                 "of provided weights"
@@ -46,11 +61,7 @@ class SpatialFilter:
         if len(set(ch_names)) != len(ch_names):
             raise ValueError("All channel names should be unique.")
 
-        self.w = w
-        self.method = method
-        self.method_params = method_params
         self.ch_names = np.array(ch_names)
-        self.name = name
 
     def __repr__(self) -> str:
         """
@@ -67,13 +78,9 @@ class SpatialFilter:
             params_str = ", ".join(params_str)
             params_str = f" ({params_str})" if params_str else ""
             result += f" | {self.method}{params_str}"
-        result += f" | {self.w.size} channels>"
+        result += f" | {self.size} channels>"
 
         return result
-
-    @property
-    def size(self):
-        return self.w.size
 
     @classmethod
     def from_inverse(
@@ -91,9 +98,7 @@ class SpatialFilter:
         ch_names = fwd["info"]["ch_names"]
         mask = get_label_mask(label, src)
         W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
-        w_agg = get_aggregation_weights(
-            roi_method, label, src, subject, subjects_dir
-        )
+        w_agg = get_aggregation_weights(roi_method, label, src, subject, subjects_dir)
         w = w_agg @ W[mask, :]
         return cls(
             np.atleast_1d(np.squeeze(w)),
@@ -103,8 +108,15 @@ class SpatialFilter:
             name=label.name,
         )
 
-    def _align(self, raw_names=None):
-        if self.ch_names is None or raw_names is None:
+    def _align(self, num_channels, raw_names):
+        print(f"{self.ch_names=}")
+        print(f"{raw_names=}")
+        has_own_names = self.ch_names is not None
+        has_raw_names = raw_names is not None
+        alignment_possible = has_own_names and has_raw_names
+
+        # Warn if alignment is not possible
+        if not alignment_possible:
             warnings.warn(
                 "The filter or the provided data object does not contain the "
                 "information about channel names. "
@@ -112,25 +124,24 @@ class SpatialFilter:
                 "the channels is the same for the filter and the M/EEG data."
             )
 
-        raw_names = np.array(raw_names)
-        if raw_names.size != self.size:
+        # Check that the number of channels in raw and filter matches
+        if num_channels != self.size:
             raise ValueError(
                 "The number of channels in the provided data object is "
                 "different from the number of channels in the filter, "
                 "can't proceed."
             )
 
-        if self.ch_names is None:
-            # The size is fine, but we don't have the information to reorder
-            # channels, use the original order
-            return np.arange((self.size,))
+        # If there is no information to reorder channels, use the original order
+        if not alignment_possible:
+            return np.arange(self.size)
 
-        # Align the order of channels to match the provided data object
+        # Otherwise, align the order of channels to match the provided data object
         common, ind1, ind2 = np.intersect1d(
             self.ch_names, raw_names, return_indices=True
         )
         if len(common) != len(raw_names):
-            missing = set(common) - set(raw_names)
+            missing = set(self.ch_names) - set(raw_names)
             raise ValueError(
                 f"The following channels are required to apply the filter but "
                 f"aren't present in the provided data object: {', '.join(missing)}. "
@@ -142,7 +153,7 @@ class SpatialFilter:
         return mapping
 
     def apply(self, data, ch_names=None) -> np.array:
-        reorder = self._align(ch_names)
+        reorder = self._align(data.shape[0], ch_names)
         return self.w[np.newaxis, reorder] @ data
 
     def apply_raw(self, raw) -> np.array:
@@ -180,13 +191,11 @@ class SpatialFilter:
     ) -> mne.SourceEstimate:
         leadfield = fwd["sol"]["data"]
         src = fwd["src"]
-        return data2stc(
-            self.get_ctf(leadfield, mode, normalize), src, subject=subject
-        )
+        return data2stc(self.get_ctf(leadfield, mode, normalize), src, subject=subject)
 
     def plot(self, info, **topomap_kwargs):
         # Make sure that the provided info has the correct amount of channels
-        n_chans_filter = self.w.size
+        n_chans_filter = self.size
         n_chans_info = len(info["ch_names"])
         if n_chans_filter != n_chans_info:
             raise ValueError(
@@ -201,7 +210,7 @@ class SpatialFilter:
 def apply_batch(data, filters, ch_names=None) -> np.array:
     weights = []
     for sf in filters:
-        reorder = sf._align(ch_names)
+        reorder = sf._align(data.shape[0], ch_names)
         weights.append(sf.w[np.newaxis, reorder])
     w = np.vstack(weights)
     return w @ data
