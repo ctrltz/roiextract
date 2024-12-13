@@ -48,8 +48,8 @@ class SpatialFilter:
         return self.w.size
 
     def _validate_ch_names(self, ch_names):
-        self.ch_names = None
         if ch_names is None:
+            self.ch_names = None
             return
 
         if self.size != len(ch_names):
@@ -109,8 +109,6 @@ class SpatialFilter:
         )
 
     def _align(self, num_channels, raw_names):
-        print(f"{self.ch_names=}")
-        print(f"{raw_names=}")
         has_own_names = self.ch_names is not None
         has_raw_names = raw_names is not None
         alignment_possible = has_own_names and has_raw_names
@@ -140,8 +138,8 @@ class SpatialFilter:
         common, ind1, ind2 = np.intersect1d(
             self.ch_names, raw_names, return_indices=True
         )
-        if len(common) != len(raw_names):
-            missing = set(self.ch_names) - set(raw_names)
+        if len(common) != self.size:
+            missing = set(self.ch_names) - set(common)
             raise ValueError(
                 f"The following channels are required to apply the filter but "
                 f"aren't present in the provided data object: {', '.join(missing)}. "
