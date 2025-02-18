@@ -5,7 +5,7 @@ import warnings
 
 from mock import patch
 
-from roiextract.filter import SpatialFilter, apply_batch, apply_batch_raw
+from roiextract.filter import SpatialFilter, apply_batch, apply_batch_raw, dot
 
 
 def create_dummy_info(n_chans):
@@ -189,3 +189,20 @@ def test_apply_batch_with_alignment():
     expected = np.atleast_2d(np.zeros((n_samples,)))
     actual = apply_batch(data, [sf], ch_names=["ch1", "ch3", "ch2"])
     assert np.array_equal(actual, expected)
+
+
+def test_dot():
+    sf1 = SpatialFilter(w=np.array([1.0, 0.0]))
+    sf2 = SpatialFilter(w=np.array([0.0, 1.0]))
+    assert np.isclose(dot(sf1, sf2), 0.0)
+
+    sf1 = SpatialFilter(w=np.array([1.0, 0.0]))
+    sf2 = SpatialFilter(w=np.array([1.0, 0.0]))
+    assert np.isclose(dot(sf1, sf2), 1.0)
+
+
+def test_dot_normalize():
+    sf1 = SpatialFilter(w=np.array([1.0, 2.0]))
+    sf2 = SpatialFilter(w=np.array([1.0, 2.0]))
+    assert np.isclose(dot(sf1, sf2), 1.0)
+    assert np.isclose(dot(sf1, sf2, normalize=False), 5.0)

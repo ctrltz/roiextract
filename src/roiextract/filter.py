@@ -2,7 +2,9 @@ import numpy as np
 import mne
 import warnings
 
-from .utils import (
+from numpy.linalg import norm
+
+from roiextract.utils import (
     _check_input,
     data2stc,
     get_inverse_matrix,
@@ -216,3 +218,29 @@ def apply_batch(data, filters, ch_names=None) -> np.array:
 
 def apply_batch_raw(raw, filters) -> np.array:
     return apply_batch(raw.get_data(), filters, raw.ch_names)
+
+
+def dot(sf1, sf2, normalize=True) -> float:
+    """
+    Compute the dot product / cosine similarity of two spatial filters.
+
+    Parameters
+    ----------
+    sf1: SpatialFilter
+        The first spatial filter.
+    sf2: SpatialFilter
+        The second spatial filter.
+    normalize: bool, default=True
+        If True (default), calculate the cosine similarity by dividing
+        over the norms of the spatial filters.
+
+    Returns
+    -------
+    dp: float
+        The value of the dot product / cosine similarity.
+    """
+    dp = sf1.w[np.newaxis, :] @ sf2.w[:, np.newaxis]
+    if normalize:
+        dp /= norm(sf1.w) * norm(sf2.w)
+
+    return dp
