@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Function for calculating the cosine similarity between spatial filters ([#68](https://github.com/ctrltz/roiextract/pull/17))
+* Function for calculating the cosine similarity between spatial filters ([#17](https://github.com/ctrltz/roiextract/pull/17))
+
+### Removed
+
+* Dropped the support for Python 3.7 and 3.8 ([#17](https://github.com/ctrltz/roiextract/pull/17))
 
 ## Version 0.0.3 (2024-05-29)
 
