@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Data-independent and data-driven optimization of spatial filters for extraction of ROI time series based on M/EEG"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
