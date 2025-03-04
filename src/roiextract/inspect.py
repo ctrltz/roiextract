@@ -20,6 +20,7 @@ class OptimizationCurve:
     def _reset(self):
         self.filters = None
         self.lambdas = None
+        self.n_points = None
         self._xs = None
         self._ys = None
 
@@ -75,11 +76,17 @@ class OptimizationCurve:
         return self
 
     def sample_homogeneous(self, n_points):
+        lambdas = np.linspace(0, 1, num=n_points)
+
+        return self.sample_manually(lambdas)
+
+    def sample_manually(self, lambdas):
         self._reset()
         self.filters = []
-        self.lambdas = np.linspace(0, 1, num=n_points)
-        self._xs = np.zeros((n_points,))
-        self._ys = np.zeros((n_points,))
+        self.lambdas = lambdas
+        self.n_points = len(lambdas)
+        self._xs = np.zeros((self.n_points,))
+        self._ys = np.zeros((self.n_points,))
 
         for i, lmbd in enumerate(self.lambdas):
             result = self._sample(lmbd)
@@ -122,9 +129,7 @@ class OptimizationCurve:
         return np.array([props[x_key], props["rat"]])
 
     def _get_filters(self):
-        self.filters = [
-            self._sample(lmbd, return_filter=True) for lmbd in self.lambdas
-        ]
+        self.filters = [self._sample(lmbd, return_filter=True) for lmbd in self.lambdas]
 
     def _get_sampled_values(self, learner):
         lambdas = np.array(list(learner.data.keys()))
