@@ -77,7 +77,7 @@ def get_aggregation_weights(method, label, src, subject, subjects_dir):
     return (label_vertices == centroid_idx).astype(int)
 
 
-def normalize(xs, ys, limits=None, return_limits=False):
+def normalize_values(xs, ys, limits=None, return_limits=False):
     if limits is not None:
         x_min, x_max, y_min, y_max = limits
     else:

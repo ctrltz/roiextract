@@ -5,12 +5,12 @@ from copy import deepcopy
 from functools import partial
 
 from roiextract.inspect import OptimizationCurve
-from roiextract.utils import _check_input, normalize
+from roiextract.utils import _check_input, normalize_values
 from roiextract._sample import sample_criterion
 
 
 def theta(sims, rats, limits):
-    sims_norm, rats_norm = normalize(sims, rats, limits)
+    sims_norm, rats_norm = normalize_values(sims, rats, limits)
 
     # Normalize to [0, 1] range, make theta=0 match lambda=0
     return 1 - 2 * np.arctan(rats_norm / sims_norm) / np.pi
@@ -81,7 +81,7 @@ class Suggester:
         oc = OptimizationCurve(self.fwd, self.label, self.mode, self.template)
         oc.sample_manually([0.0, 1.0])
 
-        _, _, limits = normalize(oc.sims, oc.rats, return_limits=True)
+        _, _, limits = normalize_values(oc.sims, oc.rats, return_limits=True)
 
         dist_fun = partial(theta_dist, target=target_theta, limits=limits)
         loss_fun = partial(self._monotone_search_loss)

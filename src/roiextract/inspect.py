@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 
 from roiextract.optimize import ctf_optimize_label
-from roiextract.utils import _check_input, logger
+from roiextract.utils import _check_input, logger, normalize_values
 
 
 class OptimizationCurve:
@@ -51,9 +51,13 @@ class OptimizationCurve:
     def rats(self):
         return self._ys
 
-    def plot_curve(self, ax):
-        ax.plot(self._xs, self._ys, "k-")
-        ax.scatter(self._xs, self._ys, c=self.lambdas)
+    def plot(self, ax, normalize=False):
+        xs, ys = self._xs, self._ys
+        if normalize:
+            xs, ys = normalize_values(xs, ys)
+
+        ax.plot(xs, ys, "k-")
+        ax.scatter(xs, ys, c=self.lambdas)
         ax.set_aspect("equal")
         ax.set_xlim([0, 1])
         ax.set_ylim([0, 1])
