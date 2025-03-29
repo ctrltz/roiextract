@@ -95,12 +95,16 @@ class SpatialFilter:
         roi_method,
         subject,
         subjects_dir,
+        verbose=False,
     ):
         src = fwd["src"]
         ch_names = fwd["info"]["ch_names"]
         mask = get_label_mask(label, src)
-        W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
-        w_agg = get_aggregation_weights(roi_method, label, src, subject, subjects_dir)
+        with mne.use_log_level(verbose):
+            W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
+            w_agg = get_aggregation_weights(
+                roi_method, label, src, subject, subjects_dir
+            )
         w = w_agg @ W[mask, :]
         return cls(
             np.atleast_1d(np.squeeze(w)),
