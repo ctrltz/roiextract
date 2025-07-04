@@ -1,13 +1,16 @@
 from roiextract.optimize import ctf_optimize_label
 
 
-def sample_criterion(lmbd, fwd, label, template, mode, dist_fun, return_filter=False):
+def sample_criterion(
+    lmbd, fwd, label, template, mode, reg, dist_fun, return_filter=False
+):
     sf, props = ctf_optimize_label(
         fwd,
         label,
         template,
         lmbd,
         mode,
+        reg=reg,
         initial="auto",
         quantify=True,
     )

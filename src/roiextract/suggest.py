@@ -21,12 +21,13 @@ def theta_dist(sims, rats, target, limits):
 
 
 class Suggester:
-    def __init__(self, fwd, label, mode, template, sampling_limit=0.0001):
+    def __init__(self, fwd, label, mode, template, reg=0.001, sampling_limit=0.0001):
         _check_input("mode", mode, ["homogeneity", "similarity"])
         self.fwd = fwd
         self.label = label
         self.mode = mode
         self.template = template
+        self.reg = reg
         self.sampling_limit = sampling_limit
         self._reset()
 
@@ -78,7 +79,7 @@ class Suggester:
     def suggest_for_theta(self, target_theta, tol=0.001):
         assert target_theta >= 0.0 and target_theta <= 1.0
 
-        oc = OptimizationCurve(self.fwd, self.label, self.mode, self.template)
+        oc = OptimizationCurve(self.fwd, self.label, self.mode, self.template, self.reg)
         oc.sample_manually([0.0, 1.0])
 
         _, _, limits = normalize_values(oc.sims, oc.rats, return_limits=True)
@@ -91,6 +92,7 @@ class Suggester:
             label=self.label,
             template=self.template,
             mode=self.mode,
+            reg=self.reg,
             dist_fun=dist_fun,
         )
 

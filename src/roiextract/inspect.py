@@ -8,12 +8,13 @@ from roiextract.utils import _check_input, logger, normalize_values
 
 
 class OptimizationCurve:
-    def __init__(self, fwd, label, mode, template, sampling_limit=0.0001):
+    def __init__(self, fwd, label, mode, template, reg=0.001, sampling_limit=0.0001):
         _check_input("mode", mode, ["homogeneity", "similarity"])
         self.fwd = fwd
         self.label = label
         self.mode = mode
         self.template = template
+        self.reg = reg
         self.sampling_limit = sampling_limit
         self._reset()
 
@@ -122,6 +123,7 @@ class OptimizationCurve:
             lmbd,
             mode=self.mode,
             initial="auto",
+            reg=self.reg,
             quantify=True,
         )
         logger.debug(f"_sample | lambda={lmbd:.3g} | {props}")
