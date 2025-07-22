@@ -25,7 +25,7 @@ def ctf_ratio(w, L, mask, source_mask=None):
     ctf_in = np.squeeze(w @ L_in)
 
     # Adjusted value in the [0, 1] range
-    return norm(ctf_in) / norm(ctf_all)
+    return (norm(ctf_in) / norm(ctf_all)) ** 2
 
 
 def ctf_similarity(w, L, w0, mask, source_mask=None):
@@ -128,13 +128,9 @@ def ctf_quantify(w, leadfield, mask, w0=None, P0=None, source_mask=None):
     result = dict()
     result["rat"] = ctf_ratio(w, leadfield, mask, source_mask=source_mask)
     if w0 is not None:
-        result["sim"] = ctf_similarity(
-            w, leadfield, w0, mask, source_mask=source_mask
-        )
+        result["sim"] = ctf_similarity(w, leadfield, w0, mask, source_mask=source_mask)
     if P0 is not None:
-        result["hom"] = ctf_homogeneity(
-            w, leadfield, P0, mask, source_mask=source_mask
-        )
+        result["hom"] = ctf_homogeneity(w, leadfield, P0, mask, source_mask=source_mask)
 
     return result
 
@@ -153,9 +149,7 @@ def ctf_quantify_label(w, fwd, label, w0=None, P0=None, source_mask=None):
     if P0 is not None:
         P0 = resolve_template(P0, label, src)
 
-    return ctf_quantify(
-        w, leadfield, mask, w0=w0, P0=P0, source_mask=source_mask
-    )
+    return ctf_quantify(w, leadfield, mask, w0=w0, P0=P0, source_mask=source_mask)
 
 
 def rec_quantify(w, cov_matrix, inverse, template, mask, source_mask=None):

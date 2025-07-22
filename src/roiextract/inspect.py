@@ -4,22 +4,24 @@ import numpy as np
 from copy import deepcopy
 
 from roiextract.optimize import ctf_optimize_label
-from roiextract.utils import _check_input, logger
+from roiextract.utils import _check_input, logger, normalize_values
 
 
 class OptimizationCurve:
-    def __init__(self, fwd, label, mode, template, sampling_limit=0.0001):
+    def __init__(self, fwd, label, mode, template, reg=0.001, sampling_limit=0.0001):
         _check_input("mode", mode, ["homogeneity", "similarity"])
         self.fwd = fwd
         self.label = label
         self.mode = mode
         self.template = template
+        self.reg = reg
         self.sampling_limit = sampling_limit
         self._reset()
 
     def _reset(self):
         self.filters = None
         self.lambdas = None
+        self.n_points = None
         self._xs = None
         self._ys = None
 
@@ -50,9 +52,13 @@ class OptimizationCurve:
     def rats(self):
         return self._ys
 
-    def plot_curve(self, ax):
-        ax.plot(self._xs, self._ys, "k-")
-        ax.scatter(self._xs, self._ys, c=self.lambdas)
+    def plot(self, ax, normalize=False):
+        xs, ys = self._xs, self._ys
+        if normalize:
+            xs, ys = normalize_values(xs, ys)
+
+        ax.plot(xs, ys, "k-")
+        ax.scatter(xs, ys, c=self.lambdas)
         ax.set_aspect("equal")
         ax.set_xlim([0, 1])
         ax.set_ylim([0, 1])
@@ -75,11 +81,17 @@ class OptimizationCurve:
         return self
 
     def sample_homogeneous(self, n_points):
+        lambdas = np.linspace(0, 1, num=n_points)
+
+        return self.sample_manually(lambdas)
+
+    def sample_manually(self, lambdas):
         self._reset()
         self.filters = []
-        self.lambdas = np.linspace(0, 1, num=n_points)
-        self._xs = np.zeros((n_points,))
-        self._ys = np.zeros((n_points,))
+        self.lambdas = lambdas
+        self.n_points = len(lambdas)
+        self._xs = np.zeros((self.n_points,))
+        self._ys = np.zeros((self.n_points,))
 
         for i, lmbd in enumerate(self.lambdas):
             result = self._sample(lmbd)
@@ -111,6 +123,7 @@ class OptimizationCurve:
             lmbd,
             mode=self.mode,
             initial="auto",
+            reg=self.reg,
             quantify=True,
         )
         logger.debug(f"_sample | lambda={lmbd:.3g} | {props}")
@@ -122,9 +135,7 @@ class OptimizationCurve:
         return np.array([props[x_key], props["rat"]])
 
     def _get_filters(self):
-        self.filters = [
-            self._sample(lmbd, return_filter=True) for lmbd in self.lambdas
-        ]
+        self.filters = [self._sample(lmbd, return_filter=True) for lmbd in self.lambdas]
 
     def _get_sampled_values(self, learner):
         lambdas = np.array(list(learner.data.keys()))
