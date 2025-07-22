@@ -19,14 +19,14 @@ def create_data():
 @pytest.mark.parametrize(
     "mask,source_mask,expected_ratio",
     [
-        [np.array([True, False, False, False]), None, np.sqrt(0.1)],
-        [np.array([True, True, False, False]), None, np.sqrt(0.2)],
-        [np.array([False, True, True, False]), None, np.sqrt(0.5)],
+        [np.array([True, False, False, False]), None, 0.1],
+        [np.array([True, True, False, False]), None, 0.2],
+        [np.array([False, True, True, False]), None, 0.5],
         [np.array([True, True, True, True]), None, 1.0],
         [
             np.array([False, True, True, False]),
             np.array([False, True, False, True]),
-            np.sqrt(0.2),
+            0.2,
         ],
     ],
 )
