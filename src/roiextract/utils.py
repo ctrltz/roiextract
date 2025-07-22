@@ -2,6 +2,8 @@ import logging
 import numpy as np
 import mne
 
+from numpy.linalg import norm
+
 
 logger = logging.getLogger("roiextract")
 
@@ -75,3 +77,14 @@ def get_aggregation_weights(method, label, src, subject, subjects_dir):
         subject=subject, restrict_vertices=src, subjects_dir=subjects_dir
     )
     return (label_vertices == centroid_idx).astype(int)
+
+
+def _normalize_vector(x, mode, cov=None):
+    if mode == "max":
+        return x / np.abs(x).max()
+    elif mode == "norm":
+        return x / norm(x)
+    elif mode == "sum":
+        return x / np.abs(x).sum()
+
+    return x

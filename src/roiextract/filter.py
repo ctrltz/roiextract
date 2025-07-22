@@ -4,8 +4,10 @@ import warnings
 
 from numpy.linalg import norm
 
+from roiextract.prepare import prepare_leadfield, prepare_covariance
 from roiextract.utils import (
     _check_input,
+    _normalize_vector,
     data2stc,
     get_inverse_matrix,
     get_label_mask,
@@ -46,10 +48,10 @@ class SpatialFilter:
         self.name = name
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.w.size
 
-    def _validate_ch_names(self, ch_names):
+    def _validate_ch_names(self, ch_names) -> None:
         if ch_names is None:
             self.ch_names = None
             return
@@ -95,7 +97,7 @@ class SpatialFilter:
         roi_method,
         subject,
         subjects_dir,
-    ):
+    ) -> "SpatialFilter":
         src = fwd["src"]
         ch_names = fwd["info"]["ch_names"]
         mask = get_label_mask(label, src)
@@ -110,7 +112,7 @@ class SpatialFilter:
             name=label.name,
         )
 
-    def _align(self, num_channels, raw_names):
+    def _align(self, num_channels, raw_names) -> np.ndarray:
         has_own_names = self.ch_names is not None
         has_raw_names = raw_names is not None
         alignment_possible = has_own_names and has_raw_names
@@ -152,46 +154,68 @@ class SpatialFilter:
 
         return mapping
 
-    def apply(self, data, ch_names=None) -> np.array:
+    def apply(self, data, ch_names=None) -> np.ndarray:
         reorder = self._align(data.shape[0], ch_names)
         return self.w[np.newaxis, reorder] @ data
 
-    def apply_raw(self, raw) -> np.array:
+    def apply_raw(self, raw) -> np.ndarray:
         return self.apply(raw.get_data(), raw.ch_names)
 
+    def get_weights(self, normalize=None):
+        _check_input("normalize", normalize, ["norm", "max", None])
+        return _normalize_vector(self.w, normalize)
+
     def get_ctf(
-        self,
-        L,
-        mode="power",
-        normalize="sum",
-    ) -> np.array:
+        self, fwd, mode="amplitude", normalize=None, source_cov=None, subject=None
+    ) -> np.ndarray | mne.SourceEstimate:
+        """
+        Get the CTF that corresponds to the spatial filter.
+
+        Parameters
+        ----------
+        fwd : Forward | array
+            Forward model, provided either as an MNE-Python object or a NumPy array.
+        mode : "amplitude" | "power"
+            Whether to return element-wise squared CTF (``"power"``) or not
+            (``"amplitude"``, default).
+        normalize : None | "max" | "norm" | "sum"
+            What to use in the denominator when normalizing the result. By default, no
+            normalization is performed.
+        source_cov: Covariance | array
+            Source covariance matrix that should be considered in the calculations.
+        subject : None | str
+            Subject name, only used if the forward model is provided as an MNE-Python object.
+
+        Returns
+        -------
+        ctf : SourceEstimate | array
+            CTF is returned as a SourceEstimate if the forward model is provided as an
+            MNE-Python object and as a NumPy array otherwise.
+        """
         _check_input("mode", mode, ["power", "amplitude"])
         _check_input("normalize", normalize, ["norm", "max", "sum", None])
 
+        leadfield, is_mne = prepare_leadfield(fwd)
+        _, n_sources = leadfield.shape
+
+        source_cov = prepare_covariance(source_cov)
+        source_std = np.ones(n_sources)
+        if source_cov is not None:
+            source_std = np.sqrt(np.diag(source_cov))
+
         # Estimate the CTF
-        ctf = self.w @ L
+        ctf = (self.w @ leadfield) * source_std[:, np.newaxis]
         if mode == "power":
             ctf = ctf**2
 
         # Normalize if needed
-        if normalize == "norm":
-            ctf /= np.linalg.norm(ctf)
-        elif normalize == "max":
-            ctf /= np.abs(ctf).max()
-        elif normalize == "sum":
-            ctf /= np.abs(ctf).sum()
-        return ctf
+        ctf = _normalize_vector(ctf, normalize, cov=source_cov)
 
-    def get_ctf_fwd(
-        self,
-        fwd,
-        mode="power",
-        normalize="norm",
-        subject=None,
-    ) -> mne.SourceEstimate:
-        leadfield = fwd["sol"]["data"]
+        if not is_mne:
+            return ctf
+
         src = fwd["src"]
-        return data2stc(self.get_ctf(leadfield, mode, normalize), src, subject=subject)
+        return data2stc(ctf, src, subject=subject)
 
     def plot(self, info, **topomap_kwargs):
         # Make sure that the provided info has the correct amount of channels
