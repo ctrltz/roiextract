@@ -3,4 +3,4 @@ try:
 
     __version__ = version("roiextract")
 except Exception:
-    __version__ = "Failed to determine the version"
+    __version__ = "0.0.0"

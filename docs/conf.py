@@ -6,10 +6,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import roiextract
+
 project = "ROIextract"
-copyright = "2024, Nikolai Kapralov"
-author = "Nikolai Kapralov"
-release = "0.0.3"
+copyright = "2024, ROIextract contributors"
+author = "ROIextract contributors"
+release = roiextract.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "roiextract"
-version = "0.0.3"
+version = "0.0.4dev"
 authors = [
     { name="Nikolai Kapralov", email="kapralov@cbs.mpg.de" }
 ]
