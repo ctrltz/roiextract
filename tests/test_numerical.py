@@ -22,9 +22,7 @@ def test_ctf_ratio_minimal():
     for _ in range(10):
         w = np.random.randn(2)
         expected_F = w[1] ** 2 / w[0] ** 2
-        expected_dF = np.array(
-            [-2 * w[1] ** 2 / w[0] ** 3, 2 * w[1] / w[0] ** 2]
-        )
+        expected_dF = np.array([-2 * w[1] ** 2 / w[0] ** 3, 2 * w[1] / w[0] ** 2])
 
         F, dF = _ctf_ratio(w, L, mask)
         assert np.allclose(F, expected_F, rtol=1e-6)
