@@ -15,7 +15,22 @@ def _report_props(props):
     return ", ".join([f"{k}={v:.2g}" for k, v in props.items()])
 
 
-def get_label_mask(label, src):
+def get_label_mask(label, src) -> np.array:
+    """
+    Get a binary mask for vertices of the provided source space that belong to the specified ROI.
+
+    Parameters
+    ----------
+    label : Label
+        The ROI to consider.
+    src : SourceSpaces
+        The source space that defines all candidate source locations.
+
+    Returns
+    -------
+    mask : array, shape (n_sources,)
+        A vector with one value for each source in ``src``: 1 if it belongs to the ROI, 0 otherwise.
+    """
     vertno = [s["vertno"] for s in src]
     nvert = [len(vn) for vn in vertno]
     if label.hemi == "lh":

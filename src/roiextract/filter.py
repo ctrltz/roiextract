@@ -19,16 +19,16 @@ class SpatialFilter:
 
     Parameters:
     -----------
-    w: array_like, shape (n_channels,)
+    w: array, shape (n_channels,)
         The weights of the spatial filter.
     method: str, optional
-        Can be used to store the name of the method that was used to obtain the filter.
+        Name of the method that was used to obtain the filter.
     method_params: dict, optional
-        Can be used to store key parameters of the method for obtaining the filter.
+        Key parameters of the method for obtaining the filter.
     ch_names: list or None, optional
-        Can be used to store names of the channels that the weights correspond to.
+        Names of the channels that the weights correspond to.
     name: str, optional
-        Can be used to add a unique name to the filter (e.g., name of the ROI).
+        A unique name to the filter (e.g., name of the ROI).
     """
 
     def __init__(
@@ -47,6 +47,9 @@ class SpatialFilter:
 
     @property
     def size(self):
+        """
+        The number of channels (weights) in the filter.
+        """
         return self.w.size
 
     def _validate_ch_names(self, ch_names):
@@ -97,6 +100,34 @@ class SpatialFilter:
         subjects_dir,
         verbose=False,
     ):
+        """
+        Construct the filter from a combination of an inverse method and a method
+        for aggregation of ROI time series.
+
+        Parameters
+        ----------
+        fwd : Forward
+            The forward model.
+        inv : InverseOperator
+            The inverse operator.
+        label : Label
+            The region of interest.
+        inv_method : str
+            Name of the inverse method.
+        lambda2 : float
+            The regularization parameter for the inverse method.
+        roi_method : str
+            ROI aggregation method.
+        subject : str
+            Subject name.
+        subjects_dir : str
+            Path to the FreeSurfer's ``subjects_dir``. This path is only used when ``roi_metho`` is set to ``centroid``.
+
+        Returns
+        -------
+        sf : SpatialFilter
+            The resulting filter.
+        """
         src = fwd["src"]
         ch_names = fwd["info"]["ch_names"]
         mask = get_label_mask(label, src)
@@ -115,6 +146,10 @@ class SpatialFilter:
         )
 
     def _align(self, num_channels, raw_names):
+        """
+        Generate a set of indices that align channels in the filter and the
+        provided data.
+        """
         has_own_names = self.ch_names is not None
         has_raw_names = raw_names is not None
         alignment_possible = has_own_names and has_raw_names
@@ -157,10 +192,44 @@ class SpatialFilter:
         return mapping
 
     def apply(self, data, ch_names=None) -> np.array:
+        """
+        Apply the filter to the provided data.
+
+        Parameters
+        ----------
+        data : array, shape (n_channels, n_times)
+            The continuous data.
+        ch_names : optional, default=None
+            The names of channels in the provided data. If the names are provided, they
+            are used to ensure that the data channels and filter weights are matched.
+            If it is not possible, an error is raised.
+
+        Returns
+        -------
+        tc : array, shape (1, n_times)
+            The time course that is extracted by the filter.
+        """
         reorder = self._align(data.shape[0], ch_names)
         return self.w[np.newaxis, reorder] @ data
 
     def apply_raw(self, raw) -> np.array:
+        """
+        Same as :method:`~roiextract.filter.SpatialFilter.apply`.
+
+        Parameters
+        ----------
+        raw : Raw
+            The continuous data.
+
+        Returns
+        -------
+        tc : array, shape (1, n_times)
+            The time course that is extracted by the filter.
+
+        Notes
+        -----
+        If both the spatial filter and the dataset contain the names of individual channels, this function ensures that the channels and filter weights are matched properly. An error is raised if the number of channels differs between the filter and the dataset, or if the names of channels do not match.
+        """
         return self.apply(raw.get_data(), raw.ch_names)
 
     def get_ctf(
@@ -221,6 +290,25 @@ def apply_batch(data, filters, ch_names=None) -> np.array:
 
 
 def apply_batch_raw(raw, filters) -> np.array:
+    """
+    Apply of a set of spatial filters to a :class:`~mne.io.Raw` dataset.
+
+    Parameters
+    ----------
+    raw : Raw
+        The dataset.
+    filters : list
+        Spatial filters to be applied to the data.
+
+    Returns
+    -------
+    tc : array
+        Array with time courses that correspond to the provided spatial filters.
+
+    Notes
+    -----
+    If both the spatial filters and the dataset contain the names of individual channels, this function ensures that the channels and filter weights are matched properly. An error is raised if the number of channels differs between the filter and the dataset, or if the names of channels do not match.
+    """
     return apply_batch(raw.get_data(), filters, raw.ch_names)
 
 
@@ -230,17 +318,17 @@ def dot(sf1, sf2, normalize=True) -> float:
 
     Parameters
     ----------
-    sf1: SpatialFilter
+    sf1 : SpatialFilter
         The first spatial filter.
-    sf2: SpatialFilter
+    sf2 : SpatialFilter
         The second spatial filter.
-    normalize: bool, default=True
+    normalize : bool, default=True
         If True (default), calculate the cosine similarity by dividing
         over the norms of the spatial filters.
 
     Returns
     -------
-    dp: float
+    dp : float
         The value of the dot product / cosine similarity.
     """
     dp = sf1.w[np.newaxis, :] @ sf2.w[:, np.newaxis]
