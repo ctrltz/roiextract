@@ -4,6 +4,28 @@ from numpy.linalg import norm
 from scipy.linalg import eig
 
 
+def _ged_matrices_ratio(leadfield, mask, source_cov=None):
+    L_in = leadfield[:, mask]
+
+    A = L_in @ L_in.T
+    B = leadfield @ leadfield.T
+
+    return A, B
+
+
+def _ctf_optimize_ratio(leadfield, mask, reg, source_cov=None):
+    # Get the GED matrices and apply regularization
+    A, B = _ged_matrices_ratio(leadfield, mask, source_cov=None)
+    A_reg = A + reg * np.trace(A) * np.eye(*A.shape) / A.shape[0]
+    B_reg = B + reg * np.trace(B) * np.eye(*B.shape) / B.shape[0]
+
+    # Get the eigenvector that corresponds to the smallest eigenvalue
+    [eigvals, eigvecs] = eig(A_reg, B_reg)
+    w = eigvecs[:, eigvals.argmax()]
+
+    return w
+
+
 def ctf_optimize_ratio_similarity(
     leadfield, template, mask, lambda_, regA=0.001, regB=0.001
 ):
