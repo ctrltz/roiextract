@@ -1,0 +1,8 @@
+{
+    "api": 0.032,
+    "generated/roiextract.filter.SpatialFilter": 0.117,
+    "generated/roiextract.filter.apply_batch": 0.005,
+    "generated/roiextract.optimize.ctf_optimize": 0.015,
+    "index": 0.004,
+    "usage": 0.002
+}
