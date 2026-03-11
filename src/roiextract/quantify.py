@@ -150,23 +150,3 @@ def ctf_quantify_label(w, fwd, label, w0=None, P0=None, source_mask=None):
         P0 = resolve_template(P0, label, src)
 
     return ctf_quantify(w, leadfield, mask, w0=w0, P0=P0, source_mask=source_mask)
-
-
-def rec_quantify(w, cov_matrix, inverse, template, mask, source_mask=None):
-    return ctf_quantify(
-        w, cov_matrix.T @ inverse, template, mask, source_mask=source_mask
-    )
-
-
-def rec_quantify_label(w, fwd, label, template, source_mask=None):
-    # Extract data from Forward
-    leadfield = fwd["sol"]["data"]
-    src = fwd["src"]
-
-    # Create a binary mask for the ROI
-    mask = get_label_mask(label, src)
-
-    # Support pre-defined options for template weights
-    template = resolve_template(template, label, src)
-
-    return ctf_quantify(w, leadfield, template, mask, source_mask=source_mask)
