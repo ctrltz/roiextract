@@ -2,7 +2,10 @@ import numpy as np
 
 from functools import partial
 
-from .analytic import ctf_optimize_ratio_similarity
+from .analytic import (
+    _ctf_optimize_ratio,
+    ctf_optimize_ratio_similarity
+)
 from .filter import SpatialFilter
 from .numerical import ctf_optimize_ratio_homogeneity
 from .quantify import ctf_quantify
@@ -210,3 +213,18 @@ def ctf_optimize_label(
         ch_names=ch_names,
         name=name,
     )
+
+
+def ctf_optimize_ratio(fwd, label, reg=0.001):
+    leadfield = prepare_leadfield(fwd)
+    mask = prepare_label_mask(label, fwd)
+
+    w = _ctf_optimize_ratio(leadfield, mask, reg)
+    return SpatialFilter(
+        w=w,
+        method="ctf_optimize_ratio",
+        method_params=dict(reg=reg),
+        ch_names=fwd.ch_names,
+        name=label.name,
+    )
+
