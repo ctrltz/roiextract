@@ -29,7 +29,7 @@ def get_label_mask(label, src) -> np.array:
     Returns
     -------
     mask : array, shape (n_sources,)
-        A vector with one value for each source in ``src``: 1 if it belongs to the ROI, 0 otherwise.
+        A vector with one logical value for each source in ``src``: True if it belongs to the ROI, False otherwise.
     """
     vertno = [s["vertno"] for s in src]
     nvert = [len(vn) for vn in vertno]
