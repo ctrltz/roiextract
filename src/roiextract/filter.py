@@ -15,7 +15,8 @@ from roiextract.utils import (
 
 class SpatialFilter:
     """
-    Convenience wrapper around a NumPy array that contains the spatial filter.
+    Convenience wrapper around a NumPy array that contains the weights of
+    the spatial filter for each data channel.
 
     Parameters:
     -----------
@@ -121,7 +122,7 @@ class SpatialFilter:
         subject : str
             Subject name.
         subjects_dir : str
-            Path to the FreeSurfer's ``subjects_dir``. This path is only used when ``roi_metho`` is set to ``centroid``.
+            Path to the FreeSurfer's ``subjects_dir``. This path is only used when ``roi_method`` is set to ``centroid``.
 
         Returns
         -------
@@ -214,7 +215,8 @@ class SpatialFilter:
 
     def apply_raw(self, raw) -> np.array:
         """
-        Same as :method:`~roiextract.filter.SpatialFilter.apply`.
+        Same as :meth:`apply`, but designed
+        to be applied directly to a :class:`~mne.io.Raw` dataset.
 
         Parameters
         ----------
@@ -234,15 +236,48 @@ class SpatialFilter:
 
     def get_ctf(
         self,
-        L,
+        leadfield,
         mode="power",
         normalize="sum",
     ) -> np.array:
+        """
+        Get the cross-talk function (CTF) of the spatial filter.
+
+        Parameters
+        ----------
+        leadfield : array, shape (n_channels, n_sources)
+            The leadfield matrix. Fixed source orientation is assumed, so each column corresponds to a single source.
+        mode : str, default="power"
+            Whether to return the CTF in terms of power (squared values) or amplitude (raw values).
+        normalize : str or None, default="sum"
+            Whether and how to normalize the CTF. See Notes for more details
+            on the available options.
+
+        Returns
+        -------
+        ctf : array, shape (n_sources,)
+            The cross-talk function of the spatial filter.
+
+        Notes
+        -----
+        The following normalization options for the resulting CTF are available:
+
+          - If None, no normalization is applied.
+          - If "max", the CTF is normalized by its maximum absolute value.
+            This option is useful when visualizing the CTF, as it ensures
+            that the values are in a comparable range across different filters.
+          - If "norm", the CTF is normalized by its Euclidean norm.
+          - If "sum", the CTF is normalized by the sum of its absolute values.
+            This option is useful in combination with the "power" mode, as it
+            allows interpreting the CTF values as fractions of the total power
+            potentially contributed by different sources to the extracted time
+            course.
+        """
         _check_input("mode", mode, ["power", "amplitude"])
         _check_input("normalize", normalize, ["norm", "max", "sum", None])
 
         # Estimate the CTF
-        ctf = self.w @ L
+        ctf = self.w @ leadfield
         if mode == "power":
             ctf = ctf**2
 
@@ -262,11 +297,50 @@ class SpatialFilter:
         normalize="norm",
         subject=None,
     ) -> mne.SourceEstimate:
+        """
+        Get the CTF of the spatial filter as a :class:`~mne.SourceEstimate` object, which can be easily visualized on the brain.
+
+        Parameters
+        ----------
+        fwd : Forward
+            The forward model.
+        mode : str, default="power"
+            Whether to return the CTF in terms of power (squared values) or amplitude (raw values).
+        normalize : str or None, default="norm"
+            Whether and how to normalize the CTF. See the Notes section of :meth:`get_ctf` for more details on the available options.
+        subject : str, optional (default=None)
+            The subject name to be included in the returned :class:`~mne.SourceEstimate` object.
+
+        Returns
+        -------
+        stc : SourceEstimate
+            The CTF of the spatial filter as a :class:`~mne.SourceEstimate` object.
+        """
         leadfield = fwd["sol"]["data"]
         src = fwd["src"]
         return data2stc(self.get_ctf(leadfield, mode, normalize), src, subject=subject)
 
     def plot(self, info, **topomap_kwargs):
+        """
+        Plot the spatial filter as a topomap.
+
+        Parameters
+        ----------
+        info : Info
+            The :class:`~mne.Info` object that contains the information about
+            the set of data channels, for which the filter is designed.
+
+        **topomap_kwargs
+            Additional keyword arguments that are forwarded to the
+            :func:`mne.viz.plot_topomap` function without modification.
+
+        Returns
+        -------
+        im : matplotlib.image.AxesImage
+            The interpolated data.
+        cn : matplotlib.contour.ContourSet
+            The fieldlines.
+        """
         # Make sure that the provided info has the correct amount of channels
         n_chans_filter = self.size
         n_chans_info = len(info["ch_names"])
@@ -281,6 +355,23 @@ class SpatialFilter:
 
 
 def apply_batch(data, filters, ch_names=None) -> np.array:
+    """
+    Apply a set of spatial filters to the provided data.
+
+    Parameters
+    ----------
+    data : array, shape (n_channels, n_times)
+        The continuous data.
+    filters : list of :class:`SpatialFilter`
+        Spatial filters to be applied to the data.
+    ch_names : list of str, optional
+        The names of the channels in the data. If provided, the function will ensure that the channels and filter weights are matched properly. An error is raised if the number of channels differs between the filters and the data, or if the names of channels do not match.
+
+    Returns
+    -------
+    tc : array, shape (n_filters, n_times)
+        Array with time courses that correspond to the provided spatial filters.
+    """
     weights = []
     for sf in filters:
         reorder = sf._align(data.shape[0], ch_names)

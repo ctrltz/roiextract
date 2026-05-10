@@ -40,7 +40,17 @@ exclude_patterns = []
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 html_show_sourcelink = False
-
+html_theme_options = {
+    "icon_links": [
+        dict(
+            name="GitHub",
+            url="https://github.com/ctrltz/roiextract",
+            icon="fa-brands fa-square-github fa-fw",
+        ),
+    ],
+    # include class methods in the per-page TOC
+    "show_toc_level": 2,
+}
 
 # -- Copybutton settings -----------------------------------------------------
 # https://sphinx-copybutton.readthedocs.io/en/latest/use.html#strip-and-configure-input-prompts-for-code-cells
@@ -74,7 +84,9 @@ numpydoc_xref_aliases = {
     "InverseOperator": "mne.minimum_norm.InverseOperator",
     "Label": "mne.Label",
     "Raw": "mne.io.Raw",
+    "Info": "mne.Info",
     "SourceSpaces": "mne.SourceSpaces",
+    "SourceEstimate": "mne.SourceEstimate",
     # ROIextract
     "SpatialFilter": "roiextract.filter.SpatialFilter",
 }
@@ -83,7 +95,10 @@ numpydoc_xref_ignore = {
     "optional",
     "default",
     "or",
+    "of",
     "shape",
     "n_series",
     "n_times",
+    "n_channels",
+    "n_sources",
 }
