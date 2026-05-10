@@ -6,13 +6,15 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import datetime
 import roiextract
 
 from intersphinx_registry import get_intersphinx_mapping
 
 
+year = datetime.datetime.now().year
 project = "ROIextract"
-copyright = "2024-2025, ROIextract contributors"
+copyright = f"2024-{year}, ROIextract contributors"
 author = "ROIextract contributors"
 release = roiextract.__version__
 
