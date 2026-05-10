@@ -10,14 +10,7 @@ Check out the :doc:`usage` section for further information, including how to :re
    This project is under active development, current API may still change.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
-Contents
---------
-
-.. toctree::
+   :maxdepth: 1
 
    usage
    api/index
