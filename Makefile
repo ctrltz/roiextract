@@ -7,10 +7,18 @@ SPHINXOPTS    ?=
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = docs
 BUILDDIR      = _build
+AUTODOCDIR    = $(SOURCEDIR)/generated
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+clean:
+	rm -rf $(BUILDDIR)/*
+	rm -rf $(AUTODOCDIR)/*
+
+show:
+	python -m webbrowser -t "$(BUILDDIR)/html/index.html"
 
 .PHONY: help Makefile
 

@@ -36,11 +36,7 @@ def _ctf_homogeneity(w, L, P0, mask):
     L_P = L_in * np.tile(P0, (L.shape[0], 1))
 
     F = dotprod**2 / norm(P_in) ** 2
-    dF = (
-        4
-        / (norm(P_in) ** 2)
-        * (dotprod * ctf_in @ L_P.T - F * ctf_in**3 @ L_in.T)
-    )
+    dF = 4 / (norm(P_in) ** 2) * (dotprod * ctf_in @ L_P.T - F * ctf_in**3 @ L_in.T)
 
     # multiply with -1 to minimize
     return (-1) * F, (-1) * dF

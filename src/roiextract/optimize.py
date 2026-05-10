@@ -112,9 +112,7 @@ def ctf_optimize(
             mask=mask,
             regA=reg,
         )
-        quant_func = partial(
-            ctf_quantify, leadfield=leadfield, mask=mask, w0=template
-        )
+        quant_func = partial(ctf_quantify, leadfield=leadfield, mask=mask, w0=template)
     else:
         # Setup the initial guess for numerical optimization
         initial = ["ones", "reg"] if initial == "auto" else [initial]
@@ -137,15 +135,11 @@ def ctf_optimize(
             mask=mask,
             x0s=x0s,
         )
-        quant_func = partial(
-            ctf_quantify, leadfield=leadfield, mask=mask, P0=template
-        )
+        quant_func = partial(ctf_quantify, leadfield=leadfield, mask=mask, P0=template)
 
     # Suggest lambda if needed
     if lambda_ == "auto":
-        lambda_ = suggest_lambda(
-            opt_func, quant_func, criteria, threshold, tol=tol
-        )
+        lambda_ = suggest_lambda(opt_func, quant_func, criteria, threshold, tol=tol)
         logger.info(
             f"lambda={lambda_:.2g} was selected using the {threshold:2g} threshold"
         )

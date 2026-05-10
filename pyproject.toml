@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "roiextract"
-version = "0.0.3"
+version = "0.0.4dev"
 authors = [
     { name="Nikolai Kapralov", email="kapralov@cbs.mpg.de" }
 ]
@@ -35,9 +35,12 @@ dev = [
     "pytest-cov"
 ]
 docs = [
+    "intersphinx-registry",
+    "numpydoc",
     "pydata-sphinx-theme",
     "sphinx",
-    "sphinx-copybutton"
+    "sphinx-copybutton",
+    "sphinx-gallery",
 ]
 
 [tool.pytest.ini_options]
