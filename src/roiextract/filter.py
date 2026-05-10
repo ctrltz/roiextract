@@ -29,7 +29,7 @@ class SpatialFilter:
     ch_names: list or None, optional
         Names of the channels that the weights correspond to.
     name: str, optional
-        A unique name to the filter (e.g., name of the ROI).
+        Name of the filter (e.g., name of the ROI it corresponds to).
     """
 
     def __init__(
@@ -201,9 +201,10 @@ class SpatialFilter:
         data : array, shape (n_channels, n_times)
             The continuous data.
         ch_names : optional, default=None
-            The names of channels in the provided data. If the names are provided, they
-            are used to ensure that the data channels and filter weights are matched.
-            If it is not possible, an error is raised.
+            The names of channels in the provided data. If the names are
+            provided, they are used to ensure that the data channels and
+            filter weights are matched. If it is not possible, an error
+            is raised.
 
         Returns
         -------
@@ -230,7 +231,11 @@ class SpatialFilter:
 
         Notes
         -----
-        If both the spatial filter and the dataset contain the names of individual channels, this function ensures that the channels and filter weights are matched properly. An error is raised if the number of channels differs between the filter and the dataset, or if the names of channels do not match.
+        If both the spatial filter and the dataset contain the names of
+        individual channels, this function ensures that the channels and
+        filter weights are matched properly. An error is raised if the number
+        of channels differs between the filter and the dataset, or if the names
+        of channels do not match.
         """
         return self.apply(raw.get_data(), raw.ch_names)
 
@@ -246,9 +251,11 @@ class SpatialFilter:
         Parameters
         ----------
         leadfield : array, shape (n_channels, n_sources)
-            The leadfield matrix. Fixed source orientation is assumed, so each column corresponds to a single source.
+            The leadfield matrix. Fixed source orientations are assumed, so
+            each column corresponds to a single source.
         mode : str, default="power"
-            Whether to return the CTF in terms of power (squared values) or amplitude (raw values).
+            Whether to return the CTF in terms of power (squared values) or
+            amplitude (raw values).
         normalize : str or None, default="sum"
             Whether and how to normalize the CTF. See Notes for more details
             on the available options.
@@ -262,13 +269,13 @@ class SpatialFilter:
         -----
         The following normalization options for the resulting CTF are available:
 
-          - If None, no normalization is applied.
-          - If "max", the CTF is normalized by its maximum absolute value.
+          - If ``None``, no normalization is applied.
+          - If ``"max"``, the CTF is normalized by its maximum absolute value.
             This option is useful when visualizing the CTF, as it ensures
             that the values are in a comparable range across different filters.
-          - If "norm", the CTF is normalized by its Euclidean norm.
-          - If "sum", the CTF is normalized by the sum of its absolute values.
-            This option is useful in combination with the "power" mode, as it
+          - If ``"norm"``, the CTF is normalized by its Euclidean norm.
+          - If ``"sum"``, the CTF is normalized by the sum of its absolute values.
+            This option is useful in combination with the ``"power"`` mode, as it
             allows interpreting the CTF values as fractions of the total power
             potentially contributed by different sources to the extracted time
             course.
@@ -298,18 +305,22 @@ class SpatialFilter:
         subject=None,
     ) -> mne.SourceEstimate:
         """
-        Get the CTF of the spatial filter as a :class:`~mne.SourceEstimate` object, which can be easily visualized on the brain.
+        Get the CTF of the spatial filter as a :class:`~mne.SourceEstimate`
+        object, which can be easily visualized on the brain surface.
 
         Parameters
         ----------
         fwd : Forward
             The forward model.
         mode : str, default="power"
-            Whether to return the CTF in terms of power (squared values) or amplitude (raw values).
+            Whether to return the CTF in terms of power (squared values) or
+            amplitude (raw values).
         normalize : str or None, default="norm"
-            Whether and how to normalize the CTF. See the Notes section of :meth:`get_ctf` for more details on the available options.
+            Whether and how to normalize the CTF. See the Notes section of
+            :meth:`get_ctf` for more details on the available options.
         subject : str, optional (default=None)
-            The subject name to be included in the returned :class:`~mne.SourceEstimate` object.
+            The subject name to be included in the returned
+            :class:`~mne.SourceEstimate` object.
 
         Returns
         -------
@@ -365,7 +376,11 @@ def apply_batch(data, filters, ch_names=None) -> np.array:
     filters : list of :class:`SpatialFilter`
         Spatial filters to be applied to the data.
     ch_names : list of str, optional
-        The names of the channels in the data. If provided, the function will ensure that the channels and filter weights are matched properly. An error is raised if the number of channels differs between the filters and the data, or if the names of channels do not match.
+        The names of the channels in the data. If provided, the function
+        will ensure that the channels and filter weights are matched
+        properly. An error is raised if the number of channels differs
+        between the filters and the data, or if the names of channels
+        do not match.
 
     Returns
     -------
@@ -398,7 +413,10 @@ def apply_batch_raw(raw, filters) -> np.array:
 
     Notes
     -----
-    If both the spatial filters and the dataset contain the names of individual channels, this function ensures that the channels and filter weights are matched properly. An error is raised if the number of channels differs between the filter and the dataset, or if the names of channels do not match.
+    If both the spatial filters and the dataset contain the names of individual
+    channels, this function ensures that the channels and filter weights are
+    matched properly. An error is raised if the number of channels differs
+    between the filter and the dataset, or if the names of channels do not match.
     """
     return apply_batch(raw.get_data(), filters, raw.ch_names)
 
