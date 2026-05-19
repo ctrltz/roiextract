@@ -32,6 +32,42 @@ class ExtractionPipeline:
     def __len__(self):
         return len(self.steps)
 
+    def __repr__(self):
+        step_reprs = [repr(step) for step in self.steps]
+        return f"ExtractionPipeline <{len(self)} steps: {', '.join(step_reprs)}>"
+
+    def _get_args_for_step(self, step, src, labels):
+        step_args = {}
+        if step.kind == StepType.ROIAggregation:
+            step_args["src"] = src
+            step_args["labels"] = labels
+        return step_args
+
+    def fit(self, data, src, labels):
+        for step in self.steps:
+            step_args = self._get_args_for_step(step, src, labels)
+            data = step.fit_transform(data, **step_args)
+        return self
+
+    def transform(self, data):
+        for step in self.steps:
+            data = step.transform(data)
+        return data
+
+    def fit_transform(self, data, src, labels):
+        self.fit(data, src, labels)
+        return self.transform(data)
+
+    @property
+    def weights(self):
+        weights = None
+        for step in self.steps:
+            if weights is None:
+                weights = step.weights
+            else:
+                weights = step.weights @ weights
+        return weights
+
     @property
     def row_names(self) -> list[str] | None:
         """
