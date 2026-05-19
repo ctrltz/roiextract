@@ -1,0 +1,59 @@
+import mne
+
+from mne._fiff.constants import FIFF
+from mne.minimum_norm import (
+    apply_inverse_raw,
+    InverseOperator,
+    prepare_inverse_operator,
+)
+
+from roiextract.pipeline.pipeline import PipelineStep
+from roiextract.pipeline.utils import _get_matrix_from_prepared_inverse_operator
+
+
+class Inverse(PipelineStep):
+    def __init__(
+        self, inv: InverseOperator, method: str, lambda2: float, nave: int = 1
+    ):
+        super().__init__()
+        if inv["source_ori"] != FIFF.FIFFV_MNE_FIXED_ORI:
+            raise ValueError("Only fixed source orientations are supported")
+
+        self._inv_op = inv.copy()
+        self.method = method
+        self.lambda2 = lambda2
+        self.nave = nave
+        self.apply_fun = None
+
+    def __repr__(self):
+        return f"Inverse <{self.method}, lambda2={self.lambda2}>"
+
+    def fit(self, data):
+        if not isinstance(data, mne.io.BaseRaw):
+            raise ValueError("Only mne.io.Raw objects are supported")
+
+        self.apply_fun = apply_inverse_raw
+        self._inv_op = prepare_inverse_operator(
+            orig=self._inv_op, nave=self.nave, lambda2=self.lambda2, method=self.method
+        )
+        self.prepared = True
+
+        return self
+
+    def transform(self, data):
+        self._check_if_prepared()
+
+        return self.apply_fun(
+            data, self._inv_op, method=self.method, lambda2=self.lambda2, prepared=True
+        )
+
+    def fit_transform(self, data):
+        return self.fit(data).transform(data)
+
+    @property
+    def weights(self):
+        self._check_if_prepared()
+
+        return _get_matrix_from_prepared_inverse_operator(
+            self._inv_op, self.method, self.lambda2
+        )

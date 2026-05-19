@@ -20,6 +20,7 @@ dependencies = [
     "adaptive",
     "numpy",
     "mne",
+    "nibabel >= 2.0",  # reading parcellations
     "scipy"
 ]
 
