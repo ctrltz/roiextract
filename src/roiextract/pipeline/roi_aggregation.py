@@ -33,8 +33,9 @@ class MeanAggregation(PipelineStep):
 
         for i, label in enumerate(labels):
             mask = get_label_mask(label, src)
-            flip_weights = mne.label_sign_flip(label, src)
-            self._weights[i, mask] = flip_weights if self.flip else 1
+            self._weights[i, mask] = (
+                1 if not self.flip else mne.label_sign_flip(label, src)
+            ) / mask.sum()
 
         self._weights = self._weights.tocsr()
 
