@@ -11,7 +11,7 @@ class ExtractionPipeline:
 
     def fit(self, data, src, labels, subject=None, subjects_dir=None, **kwargs):
         for step in self.steps:
-            step_args = step.request_args(src, labels, subject, subjects_dir, **kwargs)
+            step_args = step._request_args(src, labels, subject, subjects_dir, **kwargs)
             data = step.fit_transform(data, **step_args)
         return self
 

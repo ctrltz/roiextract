@@ -1,4 +1,5 @@
 import mne
+import numpy as np
 
 from mne._fiff.constants import FIFF
 from mne.minimum_norm import (
@@ -12,9 +13,30 @@ from roiextract.pipeline.utils import _get_matrix_from_prepared_inverse_operator
 
 
 class Inverse(PipelineStep):
+    """
+    Source reconstruction via an inverse operator. This step wraps the
+    :func:`mne.minimum_norm.apply_inverse_raw` function, allowing quick
+    access to the weight matrix corresponding to the inverse operator.
+
+    .. note::
+        Currently, only fixed source orientations are supported.
+
+    Parameters
+    ----------
+    inv : InverseOperator
+        The inverse operator to be used for source reconstruction.
+    method : str
+        The name of the reconstruction method to use. Supported methods include
+        ``"MNE"``, ``"dSPM"``, ``"sLORETA"``, and ``"eLORETA"``.
+    lambda2 : float
+        The regularization parameter for the inverse operator.
+    nave : int, default=1
+        Number of averages used to regularize the solution. Set to 1 on raw data.
+    """
+
     def __init__(
         self, inv: InverseOperator, method: str, lambda2: float, nave: int = 1
-    ):
+    ) -> None:
         super().__init__()
         if inv["source_ori"] != FIFF.FIFFV_MNE_FIXED_ORI:
             raise ValueError("Only fixed source orientations are supported")
@@ -25,7 +47,7 @@ class Inverse(PipelineStep):
         self.nave = nave
         self.apply_fun = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Inverse <{self.method}, lambda2={self.lambda2}>"
 
     def fit(self, data):
@@ -34,7 +56,7 @@ class Inverse(PipelineStep):
 
         Parameters
         ----------
-        data : mne.io.BaseRaw
+        data : Raw
             The raw data to fit the inverse operator on.
 
         Returns
@@ -53,18 +75,18 @@ class Inverse(PipelineStep):
 
         return self
 
-    def transform(self, data):
+    def transform(self, data) -> mne.SourceEstimate:
         """
         Apply the fitted inverse operator to the provided data.
 
         Parameters
         ----------
-        data : mne.io.BaseRaw
+        data : Raw
             The raw data to apply the inverse operator on.
 
         Returns
         -------
-        stc : mne.SourceEstimate
+        stc : SourceEstimate
             The source estimate obtained by applying the inverse operator.
         """
         self._check_if_prepared()
@@ -73,24 +95,32 @@ class Inverse(PipelineStep):
             data, self._inv_op, method=self.method, lambda2=self.lambda2, prepared=True
         )
 
-    def fit_transform(self, data):
+    def fit_transform(self, data) -> mne.SourceEstimate:
         """
         Fit the inverse operator to the provided data and then apply it.
 
         Parameters
         ----------
-        data : mne.io.BaseRaw
+        data : Raw
             The raw data to fit and apply the inverse operator on.
 
         Returns
         -------
-        stc : mne.SourceEstimate
+        stc : SourceEstimate
             The source estimate obtained by applying the inverse operator.
         """
         return self.fit(data).transform(data)
 
     @property
-    def weights(self):
+    def weights(self) -> np.ndarray:
+        """
+        The weight matrix corresponding to the fitted inverse operator.
+
+        Returns
+        -------
+        weights : array, shape (n_sources, n_sensors)
+            The weight matrix of the inverse operator.
+        """
         self._check_if_prepared()
 
         return _get_matrix_from_prepared_inverse_operator(

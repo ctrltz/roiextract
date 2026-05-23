@@ -12,7 +12,7 @@ def test_pipeline_step_check_if_prepared():
     step = MyStep()
 
     with pytest.raises(RuntimeError):
-        step.check_if_prepared()
+        step._check_if_prepared()
 
     step.prepared = True
-    step.check_if_prepared()  # Should not raise an error
+    step._check_if_prepared()  # Should not raise an error

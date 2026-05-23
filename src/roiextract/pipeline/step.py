@@ -18,7 +18,7 @@ class PipelineStep:
     def __init__(self):
         self.prepared = False
 
-    def check_if_prepared(self):
+    def _check_if_prepared(self):
         """
         Checks if the pipeline step has been fit to data. To pass the check,
         the overriden version of the :meth:`fit()` method should set the
@@ -48,7 +48,7 @@ class PipelineStep:
             Additional keyword arguments that may be required for fitting the step.
             By default, no arguments are provided by the :class:`~roiextract.pipeline.ExtractionPipeline` class. The step
             implementation can request specific arguments by overriding the
-            :meth:`request_args()` method.
+            :meth:`_request_args()` method.
         """
         raise NotImplementedError("fit() method must be implemented by subclasses")
 
@@ -86,7 +86,7 @@ class PipelineStep:
             Additional keyword arguments that may be required for fitting the step.
             By default, no additional arguments are provided. The step
             implementation can request specific arguments by overriding the
-            :meth:`request_args()` method.
+            :meth:`_request_args()` method.
 
         Returns
         -------
@@ -96,7 +96,7 @@ class PipelineStep:
         """
         return self.fit(data, **kwargs).transform(data)
 
-    def request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
+    def _request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
         """
         Request additional arguments for the step.
 
