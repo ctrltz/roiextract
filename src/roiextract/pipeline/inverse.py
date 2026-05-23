@@ -7,13 +7,11 @@ from mne.minimum_norm import (
     prepare_inverse_operator,
 )
 
-from roiextract.pipeline.step import PipelineStep, StepType
+from roiextract.pipeline.step import PipelineStep
 from roiextract.pipeline.utils import _get_matrix_from_prepared_inverse_operator
 
 
 class Inverse(PipelineStep):
-    kind = StepType.SourceReconstruction
-
     def __init__(
         self, inv: InverseOperator, method: str, lambda2: float, nave: int = 1
     ):
@@ -31,6 +29,19 @@ class Inverse(PipelineStep):
         return f"Inverse <{self.method}, lambda2={self.lambda2}>"
 
     def fit(self, data):
+        """
+        Fit the inverse operator to the provided data.
+
+        Parameters
+        ----------
+        data : mne.io.BaseRaw
+            The raw data to fit the inverse operator on.
+
+        Returns
+        -------
+        self : Inverse
+            The fitted inverse operator.
+        """
         if not isinstance(data, mne.io.BaseRaw):
             raise ValueError("Only mne.io.Raw objects are supported")
 
@@ -43,6 +54,19 @@ class Inverse(PipelineStep):
         return self
 
     def transform(self, data):
+        """
+        Apply the fitted inverse operator to the provided data.
+
+        Parameters
+        ----------
+        data : mne.io.BaseRaw
+            The raw data to apply the inverse operator on.
+
+        Returns
+        -------
+        stc : mne.SourceEstimate
+            The source estimate obtained by applying the inverse operator.
+        """
         self._check_if_prepared()
 
         return self.apply_fun(
@@ -50,6 +74,19 @@ class Inverse(PipelineStep):
         )
 
     def fit_transform(self, data):
+        """
+        Fit the inverse operator to the provided data and then apply it.
+
+        Parameters
+        ----------
+        data : mne.io.BaseRaw
+            The raw data to fit and apply the inverse operator on.
+
+        Returns
+        -------
+        stc : mne.SourceEstimate
+            The source estimate obtained by applying the inverse operator.
+        """
         return self.fit(data).transform(data)
 
     @property

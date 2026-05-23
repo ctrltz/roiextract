@@ -4,7 +4,7 @@ import numpy as np
 
 from scipy import sparse
 
-from roiextract.pipeline.step import PipelineStep, StepType
+from roiextract.pipeline.step import PipelineStep
 from roiextract.utils import get_label_mask, vertno_to_index
 
 
@@ -21,8 +21,6 @@ class MeanAggregation(PipelineStep):
         based on the singular value decomposition of the leadfield, as
         performed in :func:`mne.label_sign_flip`.
     """
-
-    kind = StepType.ROIAggregation
 
     def __init__(self, flip=False):
         super().__init__()
@@ -93,8 +91,6 @@ class CentroidAggregation(PipelineStep):
         The surface to use for computing the center of mass. The provided value
         is forwarded to :meth:`mne.Label.center_of_mass` without modification.
     """
-
-    kind = StepType.ROIAggregation
 
     def __init__(self, surf="sphere"):
         super().__init__()
