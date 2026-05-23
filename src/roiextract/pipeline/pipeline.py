@@ -52,7 +52,7 @@ class ExtractionPipeline:
         return weights
 
     @property
-    def row_names(self) -> list[str] | None:
+    def row_names(self):
         """
         Returns the names for rows of the resulting weight matrix.
         The names are taken from the last step in the pipeline that
