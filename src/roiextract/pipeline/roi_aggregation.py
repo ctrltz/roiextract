@@ -67,6 +67,9 @@ class MeanAggregation(PipelineStep):
         self.fit(data, src, labels)
         return self.transform(data)
 
+    def request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
+        return dict(src=src, labels=labels)
+
     @property
     def weights(self):
         self._check_if_prepared()
@@ -146,6 +149,9 @@ class CentroidAggregation(PipelineStep):
     def fit_transform(self, data, src, labels, subject=None, subjects_dir=None):
         self.fit(data, src, labels, subject, subjects_dir)
         return self.transform(data)
+
+    def request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
+        return dict(src=src, labels=labels, subject=subject, subjects_dir=subjects_dir)
 
     @property
     def weights(self):

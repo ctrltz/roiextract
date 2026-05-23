@@ -1,7 +1,3 @@
-from roiextract.pipeline.roi_aggregation import CentroidAggregation
-from roiextract.pipeline.step import StepType
-
-
 class ExtractionPipeline:
     def __init__(self, steps):
         self.steps = steps
@@ -13,22 +9,9 @@ class ExtractionPipeline:
         step_reprs = [repr(step) for step in self.steps]
         return f"ExtractionPipeline <{len(self)} steps: {', '.join(step_reprs)}>"
 
-    def _get_args_for_step(self, step, src, labels, subject=None, subjects_dir=None):
-        if step.kind != StepType.ROIAggregation:
-            return {}
-
-        step_args = dict(src=src, labels=labels)
-        if isinstance(step, CentroidAggregation):
-            step_args["subject"] = subject
-            step_args["subjects_dir"] = subjects_dir
-
-        return step_args
-
-    def fit(self, data, src, labels, subject=None, subjects_dir=None):
+    def fit(self, data, src, labels, subject=None, subjects_dir=None, **kwargs):
         for step in self.steps:
-            step_args = self._get_args_for_step(
-                step, src, labels, subject, subjects_dir
-            )
+            step_args = step.request_args(src, labels, subject, subjects_dir, **kwargs)
             data = step.fit_transform(data, **step_args)
         return self
 
@@ -37,8 +20,12 @@ class ExtractionPipeline:
             data = step.transform(data)
         return data
 
-    def fit_transform(self, data, src, labels, subject=None, subjects_dir=None):
-        self.fit(data, src, labels, subject=subject, subjects_dir=subjects_dir)
+    def fit_transform(
+        self, data, src, labels, subject=None, subjects_dir=None, **kwargs
+    ):
+        self.fit(
+            data, src, labels, subject=subject, subjects_dir=subjects_dir, **kwargs
+        )
         return self.transform(data)
 
     @property
