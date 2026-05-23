@@ -88,7 +88,7 @@ class CentroidAggregation(PipelineStep):
     ----------
     surf : str, default="sphere"
         The surface to use for computing the center of mass. The provided value
-        is forwarded to :func:`mne.Label.center_of_mass` without modification.
+        is forwarded to :meth:`mne.Label.center_of_mass` without modification.
     """
 
     kind = StepType.ROIAggregation
