@@ -7,11 +7,13 @@ from mne.minimum_norm import (
     prepare_inverse_operator,
 )
 
-from roiextract.pipeline.pipeline import PipelineStep
+from roiextract.pipeline.step import PipelineStep, StepType
 from roiextract.pipeline.utils import _get_matrix_from_prepared_inverse_operator
 
 
 class Inverse(PipelineStep):
+    kind = StepType.SourceReconstruction
+
     def __init__(
         self, inv: InverseOperator, method: str, lambda2: float, nave: int = 1
     ):

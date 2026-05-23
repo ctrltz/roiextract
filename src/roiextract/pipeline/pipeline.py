@@ -1,28 +1,5 @@
-from enum import Enum, auto
-
-
-class StepType(Enum):
-    Unknown = auto()
-    SourceReconstruction = auto()
-    ROIAggregation = auto()
-    Orthogonalization = auto()
-
-
-class PipelineStep:
-    kind = StepType.Unknown
-
-    def __init__(self):
-        self.prepared = False
-
-    def _check_if_prepared(self):
-        if not self.prepared:
-            raise RuntimeError(
-                "The pipeline step has not been prepared. Call fit() first."
-            )
-
-    @property
-    def row_names(self):
-        return None
+from roiextract.pipeline.roi_aggregation import CentroidAggregation
+from roiextract.pipeline.step import StepType
 
 
 class ExtractionPipeline:
@@ -36,16 +13,22 @@ class ExtractionPipeline:
         step_reprs = [repr(step) for step in self.steps]
         return f"ExtractionPipeline <{len(self)} steps: {', '.join(step_reprs)}>"
 
-    def _get_args_for_step(self, step, src, labels):
-        step_args = {}
-        if step.kind == StepType.ROIAggregation:
-            step_args["src"] = src
-            step_args["labels"] = labels
+    def _get_args_for_step(self, step, src, labels, subject=None, subjects_dir=None):
+        if step.kind != StepType.ROIAggregation:
+            return {}
+
+        step_args = dict(src=src, labels=labels)
+        if isinstance(step, CentroidAggregation):
+            step_args["subject"] = subject
+            step_args["subjects_dir"] = subjects_dir
+
         return step_args
 
-    def fit(self, data, src, labels):
+    def fit(self, data, src, labels, subject=None, subjects_dir=None):
         for step in self.steps:
-            step_args = self._get_args_for_step(step, src, labels)
+            step_args = self._get_args_for_step(
+                step, src, labels, subject, subjects_dir
+            )
             data = step.fit_transform(data, **step_args)
         return self
 
@@ -54,8 +37,8 @@ class ExtractionPipeline:
             data = step.transform(data)
         return data
 
-    def fit_transform(self, data, src, labels):
-        self.fit(data, src, labels)
+    def fit_transform(self, data, src, labels, subject=None, subjects_dir=None):
+        self.fit(data, src, labels, subject=subject, subjects_dir=subjects_dir)
         return self.transform(data)
 
     @property
