@@ -71,6 +71,16 @@ def data2stc(data, src, subject=None):
     )
 
 
+def vertno_to_index(src, hemi, vertno):
+    hemi_idx = ["lh", "rh"].index(hemi)
+    index = np.searchsorted(src[hemi_idx]["vertno"], vertno).item()
+
+    if hemi == "rh":
+        index += src[0]["nuse"]
+
+    return index
+
+
 def get_inverse_matrix(inv, fwd, method, lambda2):
     # TODO: get rid of private dependency
     from mne.minimum_norm.resolution_matrix import (

@@ -9,6 +9,7 @@ from roiextract.utils import (
     _report_props,
     get_label_mask,
     resolve_template,
+    vertno_to_index,
 )
 
 
@@ -73,3 +74,15 @@ def test_resolve_template(mock_label_sign_flip, initial, expected):
     test_label = mne.Label(hemi="lh", vertices=[1, 3, 7])
     resolved = resolve_template(initial, test_label, test_src)
     assert np.allclose(resolved, expected, rtol=1e-6)
+
+
+def test_vertno_to_index(default_eeg_setup):
+    fwd = default_eeg_setup[0]
+    src = fwd["src"]
+
+    n_lh = src[0]["nuse"]
+    lh_vertno = src[0]["vertno"][10]
+    rh_vertno = src[1]["vertno"][20]
+
+    assert vertno_to_index(src, "lh", lh_vertno) == 10, "lh"
+    assert vertno_to_index(src, "rh", rh_vertno) == (20 + n_lh), "rh"
