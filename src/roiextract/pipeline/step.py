@@ -13,6 +13,9 @@ class PipelineStep:
         by this pipeline step.
     row_names : list of str
         Names for rows of the weight matrix that corresponds to this step.
+    params : dict
+        Parameters of the pipeline step that should be saved in the corresponding
+        spatial filter.
     """
 
     def __init__(self):
@@ -134,4 +137,12 @@ class PipelineStep:
         """
         Names for rows of the weight matrix that corresponds to this step.
         """
-        return None
+        return
+
+    @property
+    def params(self):
+        """
+        Parameters of the pipeline step that should be saved in the corresponding
+        spatial filter.
+        """
+        return {}

@@ -78,6 +78,10 @@ class MeanAggregation(PipelineStep):
         self._check_if_prepared()
         return self.names
 
+    @property
+    def params(self):
+        return dict(flip=self.flip)
+
 
 class CentroidAggregation(PipelineStep):
     """
@@ -158,3 +162,7 @@ class CentroidAggregation(PipelineStep):
     def row_names(self):
         self._check_if_prepared()
         return self.names
+
+    @property
+    def params(self):
+        return dict(surf=self.surf)

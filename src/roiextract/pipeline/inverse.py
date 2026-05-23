@@ -48,7 +48,7 @@ class Inverse(PipelineStep):
         self.apply_fun = None
 
     def __repr__(self) -> str:
-        return f"Inverse <{self.method}, lambda2={self.lambda2}>"
+        return f"Inverse<{self.method}>"
 
     def fit(self, data):
         """
@@ -126,3 +126,7 @@ class Inverse(PipelineStep):
         return _get_matrix_from_prepared_inverse_operator(
             self._inv_op, self.method, self.lambda2
         )
+
+    @property
+    def params(self):
+        return dict(lambda2=self.lambda2, nave=self.nave)
