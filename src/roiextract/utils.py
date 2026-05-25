@@ -2,6 +2,8 @@ import logging
 import numpy as np
 import mne
 
+from mne.label import label_sign_flip
+
 
 logger = logging.getLogger("roiextract")
 
@@ -15,7 +17,7 @@ def _report_props(props):
     return ", ".join([f"{k}={v:.2g}" for k, v in props.items()])
 
 
-def get_label_mask(label, src) -> np.array:
+def get_label_mask(label, src) -> np.ndarray:
     """
     Get a binary mask for vertices of the provided source space that
     belong to the specified ROI.
@@ -51,8 +53,6 @@ def get_label_mask(label, src) -> np.array:
 
 def resolve_template(template, label, src):
     if isinstance(template, str):
-        from mne.label import label_sign_flip
-
         _check_input("template", template, ["mean_flip", "mean"])
         signflip = label_sign_flip(label, src)[np.newaxis, :]
 

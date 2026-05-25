@@ -1,5 +1,6 @@
 import mne
 import numpy as np
+import typing as T
 
 from mne._fiff.constants import FIFF
 from mne.minimum_norm import (
@@ -41,16 +42,16 @@ class Inverse(PipelineStep):
         if inv["source_ori"] != FIFF.FIFFV_MNE_FIXED_ORI:
             raise ValueError("Only fixed source orientations are supported")
 
-        self._inv_op = inv.copy()
-        self.method = method
-        self.lambda2 = lambda2
-        self.nave = nave
-        self.apply_fun = None
+        self._inv_op: InverseOperator = inv.copy()
+        self.method: str = method
+        self.lambda2: float = lambda2
+        self.nave: int = nave
+        self.apply_fun: T.Callable | None = None
 
     def __repr__(self) -> str:
         return f"Inverse<{self.method}>"
 
-    def fit(self, data):
+    def fit(self, data: mne.io.BaseRaw, **kwargs: T.Any) -> "Inverse":
         """
         Fit the inverse operator to the provided data.
 
@@ -78,7 +79,7 @@ class Inverse(PipelineStep):
 
         return self
 
-    def transform(self, data) -> mne.SourceEstimate:
+    def transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:
         """
         Apply the fitted inverse operator to the provided data.
 
@@ -93,12 +94,16 @@ class Inverse(PipelineStep):
             The source estimate obtained by applying the inverse operator.
         """
         self._check_if_prepared()
+        if self.apply_fun is None:
+            raise RuntimeError("The apply function has not been set. Call fit() first.")
 
         return self.apply_fun(
             data, self._inv_op, method=self.method, lambda2=self.lambda2, prepared=True
         )
 
-    def fit_transform(self, data) -> mne.SourceEstimate:
+    def fit_transform(
+        self, data: mne.io.BaseRaw, **kwargs: T.Any
+    ) -> mne.SourceEstimate:
         """
         Fit the inverse operator to the provided data and then apply it.
 
@@ -126,5 +131,5 @@ class Inverse(PipelineStep):
         self._check_if_prepared()
         return self._weights
 
-    def get_params(self):
+    def get_params(self) -> dict:
         return dict(method=self.method, lambda2=self.lambda2, nave=self.nave)

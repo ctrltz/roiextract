@@ -77,8 +77,8 @@ class SpatialFilter:
         if self.name:
             result += f" | {self.name}"
         if self.method:
-            params_str = [f"{k}={v}" for k, v in self.method_params.items()]
-            params_str = ", ".join(params_str)
+            params_list = [f"{k}={v}" for k, v in self.method_params.items()]
+            params_str = ", ".join(params_list)
             params_str = f" ({params_str})" if params_str else ""
             result += f" | {self.method}{params_str}"
         result += f" | {self.size} channels>"
@@ -131,7 +131,7 @@ class SpatialFilter:
 
         return mapping
 
-    def apply(self, data, ch_names=None) -> np.array:
+    def apply(self, data, ch_names=None) -> np.ndarray:
         """
         Apply the filter to the provided data.
 
@@ -153,7 +153,7 @@ class SpatialFilter:
         reorder = self._align(data.shape[0], ch_names)
         return self.w[np.newaxis, reorder] @ data
 
-    def apply_raw(self, raw) -> np.array:
+    def apply_raw(self, raw) -> np.ndarray:
         """
         Same as :meth:`apply`, but designed
         to be applied directly to a :class:`~mne.io.Raw` dataset.
@@ -183,7 +183,7 @@ class SpatialFilter:
         leadfield,
         mode="power",
         normalize="sum",
-    ) -> np.array:
+    ) -> np.ndarray:
         """
         Get the cross-talk function (CTF) of the spatial filter.
 
@@ -304,7 +304,7 @@ class SpatialFilter:
         return mne.viz.plot_topomap(w, info, **topomap_kwargs)
 
 
-def apply_batch(data, filters, ch_names=None) -> np.array:
+def apply_batch(data, filters, ch_names=None) -> np.ndarray:
     """
     Apply a set of spatial filters to the provided data.
 
@@ -334,7 +334,7 @@ def apply_batch(data, filters, ch_names=None) -> np.array:
     return w @ data
 
 
-def apply_batch_raw(raw, filters) -> np.array:
+def apply_batch_raw(raw, filters) -> np.ndarray:
     """
     Apply of a set of spatial filters to a :class:`~mne.io.Raw` dataset.
 

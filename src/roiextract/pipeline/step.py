@@ -1,3 +1,6 @@
+import typing as T
+
+
 class PipelineStep:
     """
     Base class for all pipeline steps that describe a linear transformation
@@ -29,7 +32,7 @@ class PipelineStep:
                 "The pipeline step has not been prepared. Call fit() first."
             )
 
-    def fit(self, data, **kwargs):
+    def fit(self, data: T.Any, **kwargs) -> "PipelineStep":
         """
         Fit the underlying method to the provided data.
         This method should be called before calling :meth:`transform()`.
@@ -47,7 +50,7 @@ class PipelineStep:
         """
         raise NotImplementedError("fit() method must be implemented by subclasses")
 
-    def transform(self, data):
+    def transform(self, data: T.Any) -> T.Any:
         """
         Apply the transformation defined by this pipeline step to the
         provided data.
@@ -68,7 +71,7 @@ class PipelineStep:
             "transform() method must be implemented by subclasses"
         )
 
-    def fit_transform(self, data, **kwargs):
+    def fit_transform(self, data: T.Any, **kwargs) -> T.Any:
         """
         Fit the step to the provided data and then apply the transformation.
 

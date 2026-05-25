@@ -31,9 +31,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "mock",
+    "mypy",
     "pre-commit",
     "pytest",
-    "pytest-cov"
+    "pytest-cov",
+    "scipy-stubs",
 ]
 docs = [
     "intersphinx-registry",
