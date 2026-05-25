@@ -7,9 +7,6 @@ from numpy.linalg import norm
 from roiextract.utils import (
     _check_input,
     data2stc,
-    get_inverse_matrix,
-    get_label_mask,
-    get_aggregation_weights,
 )
 
 
@@ -87,64 +84,6 @@ class SpatialFilter:
         result += f" | {self.size} channels>"
 
         return result
-
-    @classmethod
-    def from_inverse(
-        cls,
-        fwd,
-        inv,
-        label,
-        inv_method,
-        lambda2,
-        roi_method,
-        subject,
-        subjects_dir,
-        verbose=False,
-    ):
-        """
-        Construct the filter from a combination of an inverse method and a method
-        for aggregation of ROI time series.
-
-        Parameters
-        ----------
-        fwd : Forward
-            The forward model.
-        inv : InverseOperator
-            The inverse operator.
-        label : Label
-            The region of interest.
-        inv_method : str
-            Name of the inverse method.
-        lambda2 : float
-            The regularization parameter for the inverse method.
-        roi_method : str
-            ROI aggregation method.
-        subject : str
-            Subject name.
-        subjects_dir : str
-            Path to the FreeSurfer's ``subjects_dir``. This path is only used when ``roi_method`` is set to ``centroid``.
-
-        Returns
-        -------
-        sf : SpatialFilter
-            The resulting filter.
-        """
-        src = fwd["src"]
-        ch_names = fwd["info"]["ch_names"]
-        mask = get_label_mask(label, src)
-        with mne.use_log_level(verbose):
-            W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
-            w_agg = get_aggregation_weights(
-                roi_method, label, src, subject, subjects_dir
-            )
-        w = w_agg @ W[mask, :]
-        return cls(
-            np.atleast_1d(np.squeeze(w)),
-            method=f"{inv_method}+{roi_method}",
-            method_params=dict(lambda2=lambda2),
-            ch_names=ch_names,
-            name=label.name,
-        )
 
     def _align(self, num_channels, raw_names):
         """
