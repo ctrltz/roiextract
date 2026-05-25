@@ -5,7 +5,10 @@ import typing as T
 class PipelineStep:
     """
     Base class for all pipeline steps that describe a linear transformation
-    of the data.
+    of the data. Subclasses can use custom signatures for the :meth:`fit()`
+    and :meth:`fit_transform()` methods as long as data remains the first
+    argument (positional). Additional arguments can be requested by overriding
+    the :meth:`_request_args()` method.
 
     Attributes
     ----------
@@ -33,7 +36,7 @@ class PipelineStep:
                 "The pipeline step has not been prepared. Call fit() first."
             )
 
-    def fit(self, data: T.Any, **kwargs) -> "PipelineStep":
+    def fit(self, data: T.Any, **kwargs: T.Any) -> "PipelineStep":
         """
         Fit the underlying method to the provided data.
         This method should be called before calling :meth:`transform()`.
@@ -45,7 +48,8 @@ class PipelineStep:
             depends on the specific step implementation.
         **kwargs
             Additional keyword arguments that may be required for fitting the step.
-            By default, no arguments are provided by the :class:`~roiextract.pipeline.ExtractionPipeline` class. The step
+            By default, no arguments are provided by the
+            :class:`~roiextract.pipeline.ExtractionPipeline` class. The step
             implementation can request specific arguments by overriding the
             :meth:`_request_args()` method.
         """
@@ -72,7 +76,7 @@ class PipelineStep:
             "transform() method must be implemented by subclasses"
         )
 
-    def fit_transform(self, data: T.Any, **kwargs) -> T.Any:
+    def fit_transform(self, data: T.Any, **kwargs: T.Any) -> T.Any:
         """
         Fit the step to the provided data and then apply the transformation.
 

@@ -1,10 +1,16 @@
 import mne
 import numpy as np
 
-from mne.minimum_norm import apply_inverse
+from mne.minimum_norm import apply_inverse, InverseOperator
 
 
-def _get_matrix_from_prepared_inverse_operator(inv_op, method, lambda2):
+def _get_matrix_from_prepared_inverse_operator(
+    inv_op: InverseOperator, method: str, lambda2: float
+) -> np.ndarray:
+    """
+    Get the weight matrix from a prepared inverse operator.
+    """
+
     # Create a dummy mne.Info object with the same channels as in
     # the inverse operator
     info = inv_op["info"]

@@ -51,7 +51,7 @@ class Inverse(PipelineStep):
     def __repr__(self) -> str:
         return f"Inverse<{self.method}>"
 
-    def fit(self, data: mne.io.BaseRaw, **kwargs: T.Any) -> "Inverse":
+    def fit(self, data: mne.io.BaseRaw) -> "Inverse":  # type: ignore[override]
         """
         Fit the inverse operator to the provided data.
 
@@ -101,9 +101,7 @@ class Inverse(PipelineStep):
             data, self._inv_op, method=self.method, lambda2=self.lambda2, prepared=True
         )
 
-    def fit_transform(
-        self, data: mne.io.BaseRaw, **kwargs: T.Any
-    ) -> mne.SourceEstimate:
+    def fit_transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:  # type: ignore[override]
         """
         Fit the inverse operator to the provided data and then apply it.
 
