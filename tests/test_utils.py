@@ -56,7 +56,7 @@ def test_get_label_mask(hemi, vertices, expected_mask):
     assert np.array_equal(mask, np.array(expected_mask).astype(bool))
 
 
-@patch("mne.label.label_sign_flip")
+@patch("roiextract.utils.label_sign_flip")
 @pytest.mark.parametrize(
     "initial,expected",
     [
