@@ -1,4 +1,6 @@
+import mne
 import numpy as np
+import typing as T
 
 from roiextract.filter import SpatialFilter
 from roiextract.pipeline.step import PipelineStep
@@ -22,30 +24,38 @@ class ExtractionPipeline:
         Indicates whether the pipeline has been fit to the data.
     """
 
-    def __init__(self, steps):
+    def __init__(self, steps: list[PipelineStep]) -> None:
         if not isinstance(steps, list) or not steps:
             raise ValueError("Expected at least one step in the pipeline.")
 
         if not all(isinstance(step, PipelineStep) for step in steps):
             raise ValueError(
-                "All steps should be instances of PipelineStep or its subclasses."
+                "All steps should be instances of a subclass of PipelineStep."
             )
 
         self.steps = steps
         self.prepared = False
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.steps)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         step_reprs = [repr(step) for step in self.steps]
         return f"ExtractionPipeline <{len(self)} steps: {', '.join(step_reprs)}>"
 
-    def _check_if_prepared(self):
+    def _check_if_prepared(self) -> None:
         if not self.prepared:
             raise RuntimeError("The pipeline has not been prepared. Call fit() first.")
 
-    def fit(self, data, src, labels, subject=None, subjects_dir=None, **kwargs):
+    def fit(
+        self,
+        data: mne.io.BaseRaw,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> "ExtractionPipeline":
         """
         Fit the pipeline to the provided data. This method should be called before
         calling :meth:`transform()`.
@@ -57,14 +67,13 @@ class ExtractionPipeline:
         src : SourceSpaces
             The definition of the considered source space for inverse modeling.
         labels : list of Label
-            The list of labels defining the ROIs for which time courses should be
-            extracted.
+            The list of ROIs for which time courses should be extracted.
         subject : str, optional
             The subject for which the pipeline is being fit. Currently, this argument
             is only used by centroid-based aggregation to compute the center of mass
             of the ROIs.
         subjects_dir : str, optional
-            The directory containing the subject's MRI data. Currently, this argument
+            The directory containing the subjects' MRI data. Currently, this argument
             is only used by centroid-based aggregation to compute the center of mass
             of the ROIs.
         **kwargs
@@ -78,7 +87,7 @@ class ExtractionPipeline:
         Notes
         -----
         Each step in the pipeline receives only a subset of the provided arguments,
-        depending on the specific requirements of the step. The step can request
+        depending on the specific requirements of the step. Custom steps can request
         specific arguments by overriding the :meth:`PipelineStep._request_args()`
         method.
         """
@@ -93,7 +102,7 @@ class ExtractionPipeline:
 
         return self
 
-    def transform(self, data):
+    def transform(self, data: mne.io.BaseRaw) -> T.Any:
         """
         Transform the provided data using the fitted pipeline. For built-in steps,
         the transformation either executes the corresponding function in MNE-Python
@@ -115,8 +124,14 @@ class ExtractionPipeline:
         return data
 
     def fit_transform(
-        self, data, src, labels, subject=None, subjects_dir=None, **kwargs
-    ):
+        self,
+        data: mne.io.BaseRaw,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> T.Any:
         """
         Fit the pipeline to the provided data and then apply the transformation.
         For the parameters and return values, see :meth:`fit()` and :meth:`transform()`,
