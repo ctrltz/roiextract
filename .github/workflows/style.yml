@@ -1,0 +1,21 @@
+name: style
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+    - uses: astral-sh/ruff-action@v4.0.0
+    - run: |
+        ruff check --fix
+        ruff format

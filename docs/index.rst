@@ -3,7 +3,6 @@ Welcome to ROIextract's documentation!
 
 **ROIextract** is a Python library for extraction of time series of MEG or EEG activity from regions of interest.
 The main focus is on using the *cross-talk function* for quantifying, visualizing and optimizing the remaining field spread.
-Check out the :doc:`usage` section for further information, including how to :ref:`install <installation>` the project.
 
 .. note::
 
@@ -12,5 +11,5 @@ Check out the :doc:`usage` section for further information, including how to :re
 .. toctree::
    :maxdepth: 1
 
-   usage
+   user_guide/index
    api/index

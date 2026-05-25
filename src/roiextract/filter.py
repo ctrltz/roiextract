@@ -7,9 +7,6 @@ from numpy.linalg import norm
 from roiextract.utils import (
     _check_input,
     data2stc,
-    get_inverse_matrix,
-    get_label_mask,
-    get_aggregation_weights,
 )
 
 
@@ -20,7 +17,7 @@ class SpatialFilter:
 
     Parameters:
     -----------
-    w: array, shape (n_channels,)
+    w: array, shape (n_sensors,)
         The weights of the spatial filter.
     method: str, optional
         Name of the method that was used to obtain the filter.
@@ -80,71 +77,13 @@ class SpatialFilter:
         if self.name:
             result += f" | {self.name}"
         if self.method:
-            params_str = [f"{k}={v}" for k, v in self.method_params.items()]
-            params_str = ", ".join(params_str)
+            params_list = [f"{k}={v}" for k, v in self.method_params.items()]
+            params_str = ", ".join(params_list)
             params_str = f" ({params_str})" if params_str else ""
             result += f" | {self.method}{params_str}"
         result += f" | {self.size} channels>"
 
         return result
-
-    @classmethod
-    def from_inverse(
-        cls,
-        fwd,
-        inv,
-        label,
-        inv_method,
-        lambda2,
-        roi_method,
-        subject,
-        subjects_dir,
-        verbose=False,
-    ):
-        """
-        Construct the filter from a combination of an inverse method and a method
-        for aggregation of ROI time series.
-
-        Parameters
-        ----------
-        fwd : Forward
-            The forward model.
-        inv : InverseOperator
-            The inverse operator.
-        label : Label
-            The region of interest.
-        inv_method : str
-            Name of the inverse method.
-        lambda2 : float
-            The regularization parameter for the inverse method.
-        roi_method : str
-            ROI aggregation method.
-        subject : str
-            Subject name.
-        subjects_dir : str
-            Path to the FreeSurfer's ``subjects_dir``. This path is only used when ``roi_method`` is set to ``centroid``.
-
-        Returns
-        -------
-        sf : SpatialFilter
-            The resulting filter.
-        """
-        src = fwd["src"]
-        ch_names = fwd["info"]["ch_names"]
-        mask = get_label_mask(label, src)
-        with mne.use_log_level(verbose):
-            W = get_inverse_matrix(inv, fwd, inv_method, lambda2)
-            w_agg = get_aggregation_weights(
-                roi_method, label, src, subject, subjects_dir
-            )
-        w = w_agg @ W[mask, :]
-        return cls(
-            np.atleast_1d(np.squeeze(w)),
-            method=f"{inv_method}+{roi_method}",
-            method_params=dict(lambda2=lambda2),
-            ch_names=ch_names,
-            name=label.name,
-        )
 
     def _align(self, num_channels, raw_names):
         """
@@ -192,13 +131,13 @@ class SpatialFilter:
 
         return mapping
 
-    def apply(self, data, ch_names=None) -> np.array:
+    def apply(self, data, ch_names=None) -> np.ndarray:
         """
         Apply the filter to the provided data.
 
         Parameters
         ----------
-        data : array, shape (n_channels, n_times)
+        data : array, shape (n_sensors, n_times)
             The continuous data.
         ch_names : optional, default=None
             The names of channels in the provided data. If the names are
@@ -214,7 +153,7 @@ class SpatialFilter:
         reorder = self._align(data.shape[0], ch_names)
         return self.w[np.newaxis, reorder] @ data
 
-    def apply_raw(self, raw) -> np.array:
+    def apply_raw(self, raw) -> np.ndarray:
         """
         Same as :meth:`apply`, but designed
         to be applied directly to a :class:`~mne.io.Raw` dataset.
@@ -244,13 +183,13 @@ class SpatialFilter:
         leadfield,
         mode="power",
         normalize="sum",
-    ) -> np.array:
+    ) -> np.ndarray:
         """
         Get the cross-talk function (CTF) of the spatial filter.
 
         Parameters
         ----------
-        leadfield : array, shape (n_channels, n_sources)
+        leadfield : array, shape (n_sensors, n_sources)
             The leadfield matrix. Fixed source orientations are assumed, so
             each column corresponds to a single source.
         mode : str, default="power"
@@ -365,13 +304,13 @@ class SpatialFilter:
         return mne.viz.plot_topomap(w, info, **topomap_kwargs)
 
 
-def apply_batch(data, filters, ch_names=None) -> np.array:
+def apply_batch(data, filters, ch_names=None) -> np.ndarray:
     """
     Apply a set of spatial filters to the provided data.
 
     Parameters
     ----------
-    data : array, shape (n_channels, n_times)
+    data : array, shape (n_sensors, n_times)
         The continuous data.
     filters : list of :class:`SpatialFilter`
         Spatial filters to be applied to the data.
@@ -395,7 +334,7 @@ def apply_batch(data, filters, ch_names=None) -> np.array:
     return w @ data
 
 
-def apply_batch_raw(raw, filters) -> np.array:
+def apply_batch_raw(raw, filters) -> np.ndarray:
     """
     Apply of a set of spatial filters to a :class:`~mne.io.Raw` dataset.
 

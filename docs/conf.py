@@ -62,6 +62,7 @@ copybutton_exclude = ".linenos, .gp"
 
 # -- Autodoc settings --------------------------------------------------------
 
+autodoc_typehints = "none"
 autodoc_typing_aliases = {
     "ArrayLike": "numpy.typing.ArrayLike",
 }
@@ -99,8 +100,8 @@ numpydoc_xref_ignore = {
     "or",
     "of",
     "shape",
-    "n_series",
     "n_times",
-    "n_channels",
     "n_sources",
+    "n_sensors",
+    "n_labels",
 }

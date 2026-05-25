@@ -20,6 +20,7 @@ dependencies = [
     "adaptive",
     "numpy",
     "mne",
+    "nibabel >= 2.0",  # reading parcellations
     "scipy"
 ]
 
@@ -30,9 +31,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "mock",
+    "mypy",
     "pre-commit",
     "pytest",
-    "pytest-cov"
+    "pytest-cov",
+    "scipy-stubs",
 ]
 docs = [
     "intersphinx-registry",
