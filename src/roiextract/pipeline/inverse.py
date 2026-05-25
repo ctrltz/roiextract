@@ -131,5 +131,5 @@ class Inverse(PipelineStep):
         self._check_if_prepared()
         return self._weights
 
-    def get_params(self) -> dict:
+    def get_params(self) -> dict[str, T.Any]:
         return dict(method=self.method, lambda2=self.lambda2, nave=self.nave)

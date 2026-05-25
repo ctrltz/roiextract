@@ -1,3 +1,4 @@
+import mne
 import typing as T
 
 
@@ -13,10 +14,10 @@ class PipelineStep:
         fit to the data.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.prepared = False
 
-    def _check_if_prepared(self):
+    def _check_if_prepared(self) -> None:
         """
         Checks if the pipeline step has been fit to data. To pass the check,
         the overriden version of the :meth:`fit()` method should set the
@@ -94,7 +95,14 @@ class PipelineStep:
         """
         return self.fit(data, **kwargs).transform(data)
 
-    def _request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
+    def _request_args(
+        self,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> dict[str, T.Any]:
         """
         Request additional arguments for the step.
 
@@ -119,7 +127,7 @@ class PipelineStep:
         """
         return {}
 
-    def get_weights(self):
+    def get_weights(self) -> T.Any:
         """
         The weight matrix corresponding to the linear transformation defined
         by this pipeline step.
@@ -132,7 +140,7 @@ class PipelineStep:
         """
         raise NotImplementedError("get_weights() must be implemented by subclasses")
 
-    def get_names(self):
+    def get_names(self) -> list[str] | None:
         """
         Names for rows of the weight matrix that corresponds to this step.
 
@@ -143,7 +151,7 @@ class PipelineStep:
         """
         return None
 
-    def get_params(self):
+    def get_params(self) -> dict[str, T.Any]:
         """
         Parameters of the pipeline step that should be saved in the corresponding
         spatial filter.

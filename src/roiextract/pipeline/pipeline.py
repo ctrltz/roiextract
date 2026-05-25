@@ -160,15 +160,16 @@ class ExtractionPipeline:
             weights = step.get_weights() @ weights
         return weights
 
-    def get_names(self) -> list[str]:
+    def get_names(self) -> list[str] | None:
         """
         Returns the names for rows of the resulting weight matrix.
         The names are taken from the last step in the pipeline.
 
         Returns
         -------
-        row_names : list of str
-            Names for rows of the weight matrix that corresponds to the entire pipeline.
+        row_names : list of str | None
+            Names for rows of the weight matrix that corresponds to the entire pipeline,
+            or None if the names are not available.
         """
         self._check_if_prepared()
         return self.steps[-1].get_names()
