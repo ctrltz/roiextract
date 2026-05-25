@@ -23,6 +23,10 @@ def test_inverse_across_methods(default_eeg_setup, method):
 
     assert np.allclose(stc.data, extracted, atol=1e-6), f"Mismatch in method {method}"
 
+    # Check the metadata
+    assert inv_step.get_params()["method"] == method
+    assert inv_step.get_params()["lambda2"] == 1.0 / 9.0
+
 
 @pytest.mark.parametrize("lambda2", [1.0 / 9.0, 1.0 / 4.0, 1.0 / 16.0])
 def test_inverse_across_lambdas(default_eeg_setup, lambda2):
@@ -44,3 +48,7 @@ def test_inverse_across_lambdas(default_eeg_setup, lambda2):
     assert np.allclose(
         stc.data, extracted, atol=1e-6
     ), f"Mismatch for lambda2={lambda2}"
+
+    # Check the metadata
+    assert inv_step.get_params()["method"] == "sLORETA"
+    assert inv_step.get_params()["lambda2"] == lambda2

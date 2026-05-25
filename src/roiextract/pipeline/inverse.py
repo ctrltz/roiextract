@@ -127,4 +127,4 @@ class Inverse(PipelineStep):
         )
 
     def get_params(self):
-        return dict(lambda2=self.lambda2, nave=self.nave)
+        return dict(method=self.method, lambda2=self.lambda2, nave=self.nave)

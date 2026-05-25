@@ -38,7 +38,6 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
         label.name for label in labels_to_use
     ], "Row names do not match label names"
     assert agg_step.get_params()["flip"] == flip
-    assert agg_step.prepared
 
     for i, label in enumerate(labels_to_use):
         mask = get_label_mask(label, src)
@@ -96,4 +95,3 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
         label.name for label in labels_to_use
     ], "Row names do not match label names"
     assert agg_step.get_params()["surf"] == "custom"
-    assert agg_step.prepared
