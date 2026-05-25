@@ -172,12 +172,36 @@ class CentroidAggregation(PipelineStep):
         return "CentroidAggregation"
 
     def fit(self, data, src, labels, subject=None, subjects_dir=None):
-        self.labels = labels
+        """
+        Fit the aggregation step to the provided data, source space, and labels.
+
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+        src : SourceSpaces
+            The definition of the considered source space for inverse modeling.
+        labels : Label | list of Label
+            The label or list of labels defining the ROIs for which time courses
+            should be extracted.
+        subject : str | None
+            The subject name. If ``None``, it will be inferred from the source space.
+        subjects_dir : str | None
+            The directory containing the subjects' MRI data. If ``None``, it will be
+            inferred from the environment by MNE-Python. Set the path explicitly in
+            case of errors.
+
+        Returns
+        -------
+        self : CentroidAggregation
+            The fitted aggregation step.
+        """
+        self.labels = labels if isinstance(labels, list) else [labels]
         self.src = src
-        self.names = [label.name for label in labels]
+        self.names = [label.name for label in self.labels]
 
         n_sources = data.shape[0]
-        n_labels = len(labels)
+        n_labels = len(self.labels)
         self._weights = sparse.lil_matrix((n_labels, n_sources))
         self._indices = np.zeros(n_labels, dtype=int)
 
@@ -188,7 +212,7 @@ class CentroidAggregation(PipelineStep):
             )
             subject = src[0]["subject_his_id"]
 
-        for i, label in enumerate(labels):
+        for i, label in enumerate(self.labels):
             centroid_vertno = label.center_of_mass(
                 subject=subject,
                 restrict_vertices=src,
@@ -206,10 +230,29 @@ class CentroidAggregation(PipelineStep):
         return self
 
     def transform(self, data):
+        """
+        Apply centroid-based aggregation to the provided data.
+
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+
+        Returns
+        -------
+        label_tc : array, shape (n_labels, n_times)
+            The extracted time courses for each label.
+        """
         self._check_if_prepared()
         return data.data[self._indices, :]
 
     def fit_transform(self, data, src, labels, subject=None, subjects_dir=None):
+        """
+        Fit the aggregation step to the provided data, source space, and labels,
+        and apply the aggregation to extract the ROI time courses. See
+        :meth:`fit()` and :meth:`transform()` for details on the parameters and
+        return values, respectively.
+        """
         self.fit(data, src, labels, subject, subjects_dir)
         return self.transform(data)
 
@@ -217,12 +260,37 @@ class CentroidAggregation(PipelineStep):
         return dict(src=src, labels=labels, subject=subject, subjects_dir=subjects_dir)
 
     def get_weights(self):
+        """
+        The weight matrix corresponding to the resulting aggregation transformation.
+
+        Returns
+        -------
+        weights : array
+            The weight matrix that contains one non-zero entry per row corresponding
+            to the selected centroid source for each label.
+        """
         self._check_if_prepared()
         return self._weights
 
     def get_names(self):
+        """
+        Label names are used as names for rows of the weight matrix.
+
+        Returns
+        -------
+        names : list of str
+            The names of the rows / labels.
+        """
         self._check_if_prepared()
         return self.names
 
     def get_params(self):
+        """
+        Get the single ``surf`` parameter of the aggregation step as a dictionary.
+
+        Returns
+        -------
+        params : dict
+            The parameters of the aggregation step.
+        """
         return dict(surf=self.surf)
