@@ -8,4 +8,5 @@ ROIextract in practice.
 .. toctree::
    :maxdepth: 2
 
+   00_background
    01_pipelines_and_filters
