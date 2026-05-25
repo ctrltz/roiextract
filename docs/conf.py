@@ -101,6 +101,6 @@ numpydoc_xref_ignore = {
     "shape",
     "n_series",
     "n_times",
-    "n_channels",
     "n_sources",
+    "n_sensors",
 }

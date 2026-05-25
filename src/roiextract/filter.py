@@ -20,7 +20,7 @@ class SpatialFilter:
 
     Parameters:
     -----------
-    w: array, shape (n_channels,)
+    w: array, shape (n_sensors,)
         The weights of the spatial filter.
     method: str, optional
         Name of the method that was used to obtain the filter.
@@ -198,7 +198,7 @@ class SpatialFilter:
 
         Parameters
         ----------
-        data : array, shape (n_channels, n_times)
+        data : array, shape (n_sensors, n_times)
             The continuous data.
         ch_names : optional, default=None
             The names of channels in the provided data. If the names are
@@ -250,7 +250,7 @@ class SpatialFilter:
 
         Parameters
         ----------
-        leadfield : array, shape (n_channels, n_sources)
+        leadfield : array, shape (n_sensors, n_sources)
             The leadfield matrix. Fixed source orientations are assumed, so
             each column corresponds to a single source.
         mode : str, default="power"
@@ -371,7 +371,7 @@ def apply_batch(data, filters, ch_names=None) -> np.array:
 
     Parameters
     ----------
-    data : array, shape (n_channels, n_times)
+    data : array, shape (n_sensors, n_times)
         The continuous data.
     filters : list of :class:`SpatialFilter`
         Spatial filters to be applied to the data.
