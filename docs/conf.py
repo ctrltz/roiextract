@@ -99,8 +99,8 @@ numpydoc_xref_ignore = {
     "or",
     "of",
     "shape",
-    "n_series",
     "n_times",
     "n_sources",
     "n_sensors",
+    "n_labels",
 }
