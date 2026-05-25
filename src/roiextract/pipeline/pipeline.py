@@ -155,12 +155,9 @@ class ExtractionPipeline:
             entire pipeline.
         """
         self._check_if_prepared()
-        weights = None
-        for step in self.steps:
-            if weights is None:
-                weights = step.get_weights()
-            else:
-                weights = step.get_weights() @ weights
+        weights = self.steps[0].get_weights()
+        for step in self.steps[1:]:
+            weights = step.get_weights() @ weights
         return weights
 
     def get_names(self) -> list[str]:
