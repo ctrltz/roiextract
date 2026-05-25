@@ -16,15 +16,12 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
     src = fwd["src"]
     labels_to_use = labels[:n_labels]
 
-    # Crop 10 seconds to speed up the test
-    raw_eeg_crop = raw_eeg.copy().crop(tmax=10.0)
-
     inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
-    stc = inv_step.fit_transform(raw_eeg_crop)
+    stc = inv_step.fit_transform(raw_eeg)
 
     agg_step = MeanAggregation(flip=flip)
     label_tc = agg_step.fit_transform(stc, src, labels=labels_to_use)
-    assert label_tc.shape == (n_labels, raw_eeg_crop.times.size)
+    assert label_tc.shape == (n_labels, raw_eeg.times.size)
     weights = agg_step.get_weights()
 
     # Apply the method using the extracted weights and ensure that the result
@@ -64,15 +61,12 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
         label.center_of_mass = MagicMock(return_value=vertno)
         mocks.append(label.center_of_mass)
 
-    # Crop 10 seconds to speed up the test
-    raw_eeg_crop = raw_eeg.copy().crop(tmax=10.0)
-
     inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
-    stc = inv_step.fit_transform(raw_eeg_crop)
+    stc = inv_step.fit_transform(raw_eeg)
 
     agg_step = CentroidAggregation(surf="custom")
     label_tc = agg_step.fit_transform(stc, src, labels=labels_to_use)
-    assert label_tc.shape == (n_labels, raw_eeg_crop.times.size)
+    assert label_tc.shape == (n_labels, raw_eeg.times.size)
     weights = agg_step.get_weights()
 
     # Check the weights

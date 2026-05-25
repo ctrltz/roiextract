@@ -24,6 +24,9 @@ def default_eeg_setup():
     fwd_eeg = fwd.pick_channels(info_eeg.ch_names)
     raw_eeg = raw.pick_channels(info_eeg.ch_names)
 
+    # Crop 10 seconds to speed up the test
+    raw_eeg_crop = raw_eeg.copy().crop(tmax=10.0)
+
     # Create the inverse operator
     noise_cov = mne.make_ad_hoc_cov(info_eeg, std=1.0)
     inv_op = mne.minimum_norm.make_inverse_operator(
@@ -35,4 +38,4 @@ def default_eeg_setup():
         "sample", parc="aparc", subjects_dir=subjects_dir
     )
 
-    return fwd_eeg, inv_op, raw_eeg, labels
+    return fwd_eeg, inv_op, raw_eeg_crop, labels
