@@ -27,7 +27,7 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
     # Apply the method using the extracted weights and ensure that the result
     # matches MNE-based computation
     extracted = weights @ stc.data
-    assert np.allclose(label_tc, extracted, atol=1e-6), f"Mismatch in flip={flip}"
+    assert np.allclose(label_tc, extracted, atol=1e-9), f"Mismatch in flip={flip}"
 
     # Check the metadata
     assert ("Flip" in repr(agg_step)) == flip
@@ -82,7 +82,7 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
     # Apply the method using the extracted weights and ensure that the result
     # matches MNE-based computation
     extracted = weights @ stc.data
-    assert np.allclose(label_tc, extracted, atol=1e-6)
+    assert np.allclose(label_tc, extracted, atol=1e-9)
 
     # Check the metadata
     assert agg_step.get_names() == [

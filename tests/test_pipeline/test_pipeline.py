@@ -19,6 +19,8 @@ class StepRequestingArgs(PipelineStep):
         super().__init__()
 
     def fit(self, data, src, labels, kwarg=None):
+        # NOTE: errors will be raised in the test below if ExtractionPipeline
+        # does not provide the requested arguments
         assert src == "src"
         assert labels == "labels"
         assert kwarg == "kwarg"

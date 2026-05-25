@@ -18,7 +18,7 @@ def test_inverse_across_methods(default_eeg_setup, method):
     data = raw_eeg.get_data()
     extracted = weights @ data
 
-    assert np.allclose(stc.data, extracted, atol=1e-6), f"Mismatch in method {method}"
+    assert np.allclose(stc.data, extracted, atol=1e-9), f"Mismatch in method {method}"
 
     # Check the metadata
     assert inv_step.get_params()["method"] == method
@@ -40,7 +40,7 @@ def test_inverse_across_lambdas(default_eeg_setup, lambda2):
     extracted = weights @ data
 
     assert np.allclose(
-        stc.data, extracted, atol=1e-6
+        stc.data, extracted, atol=1e-9
     ), f"Mismatch for lambda2={lambda2}"
 
     # Check the metadata
