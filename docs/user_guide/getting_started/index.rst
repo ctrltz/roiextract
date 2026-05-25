@@ -5,8 +5,8 @@ Welcome to ROIextract! This overview tutorial will guide you through the functio
 and key concepts of the package, while examples can serve as the backbone for applying
 ROIextract in practice.
 
-.. toctree::
-   :maxdepth: 2
+.. .. toctree::
+..    :maxdepth: 2
 
-   00_background
-   01_pipelines_and_filters
+..    00_background
+..    01_pipelines_and_filters
