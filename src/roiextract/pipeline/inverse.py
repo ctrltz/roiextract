@@ -71,6 +71,9 @@ class Inverse(PipelineStep):
         self._inv_op = prepare_inverse_operator(
             orig=self._inv_op, nave=self.nave, lambda2=self.lambda2, method=self.method
         )
+        self._weights = _get_matrix_from_prepared_inverse_operator(
+            self._inv_op, self.method, self.lambda2
+        )
         self.prepared = True
 
         return self
@@ -121,10 +124,7 @@ class Inverse(PipelineStep):
             The weight matrix of the inverse operator.
         """
         self._check_if_prepared()
-
-        return _get_matrix_from_prepared_inverse_operator(
-            self._inv_op, self.method, self.lambda2
-        )
+        return self._weights
 
     def get_params(self):
         return dict(method=self.method, lambda2=self.lambda2, nave=self.nave)
