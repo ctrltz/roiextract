@@ -111,8 +111,7 @@ class Inverse(PipelineStep):
         """
         return self.fit(data).transform(data)
 
-    @property
-    def weights(self) -> np.ndarray:
+    def get_weights(self) -> np.ndarray:
         """
         The weight matrix corresponding to the fitted inverse operator.
 
@@ -127,6 +126,5 @@ class Inverse(PipelineStep):
             self._inv_op, self.method, self.lambda2
         )
 
-    @property
-    def params(self):
+    def get_params(self):
         return dict(lambda2=self.lambda2, nave=self.nave)

@@ -50,8 +50,7 @@ class Step1(PipelineStep):
     def transform(self, data):
         return data + 1
 
-    @property
-    def weights(self):
+    def get_weights(self):
         return np.array([[1, 1], [1, 0]])
 
 
@@ -76,16 +75,13 @@ class Step2(PipelineStep):
     def _request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
         return dict(raise_error=kwargs.get("raise_error", False))
 
-    @property
-    def weights(self):
+    def get_weights(self):
         return np.array([[1, -1]])
 
-    @property
-    def row_names(self):
+    def get_names(self):
         return ["Row1"]
 
-    @property
-    def params(self):
+    def get_params(self):
         return dict(raise_error=self.raise_error_on_transform)
 
 
@@ -119,14 +115,14 @@ def test_extraction_pipeline_weights():
     pipeline = ExtractionPipeline(steps=[Step1(), Step2()])
     pipeline.fit(data=1, src=None, labels=None)
 
-    assert np.array_equal(pipeline.weights, np.array([[0, 1]]))
+    assert np.array_equal(pipeline.get_weights(), np.array([[0, 1]]))
 
 
 def test_extraction_pipeline_row_names():
     pipeline = ExtractionPipeline(steps=[Step1(), Step2()])
     pipeline.fit(data=1, src=None, labels=None)
 
-    assert pipeline.row_names == ["Row1"]
+    assert pipeline.get_names() == ["Row1"]
 
 
 def test_extraction_pipeline_get_filters():
@@ -148,10 +144,10 @@ def test_extraction_pipeline_check_if_prepared():
         pipeline.transform(1)
 
     with pytest.raises(RuntimeError):
-        pipeline.weights
+        pipeline.get_weights()
 
     with pytest.raises(RuntimeError):
-        pipeline.row_names
+        pipeline.get_names()
 
     with pytest.raises(RuntimeError):
         pipeline.get_filters()

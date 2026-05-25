@@ -20,11 +20,6 @@ class ExtractionPipeline:
     ----------
     prepared : bool
         Indicates whether the pipeline has been fit to the data.
-    weights : array
-        The weight matrix corresponding to the linear transformation defined by the
-        entire pipeline.
-    row_names : list of str
-        Names for rows of the weight matrix that corresponds to the entire pipeline.
     """
 
     def __init__(self, steps):
@@ -132,37 +127,46 @@ class ExtractionPipeline:
         )
         return self.transform(data)
 
-    @property
-    def weights(self) -> np.ndarray:
+    def get_weights(self) -> np.ndarray:
         """
         The weight matrix corresponding to the linear transformation defined by the
         entire pipeline. It is obtained by multiplying the weight matrices of the
         individual steps in the pipeline.
+
+        Returns
+        -------
+        weights : array
+            The weight matrix corresponding to the linear transformation defined by the
+            entire pipeline.
         """
         self._check_if_prepared()
         weights = None
         for step in self.steps:
             if weights is None:
-                weights = step.weights
+                weights = step.get_weights()
             else:
-                weights = step.weights @ weights
+                weights = step.get_weights() @ weights
         return weights
 
-    @property
-    def row_names(self) -> list[str]:
+    def get_names(self) -> list[str]:
         """
         Returns the names for rows of the resulting weight matrix.
         The names are taken from the last step in the pipeline.
+
+        Returns
+        -------
+        row_names : list of str
+            Names for rows of the weight matrix that corresponds to the entire pipeline.
         """
         self._check_if_prepared()
-        return self.steps[-1].row_names
+        return self.steps[-1].get_names()
 
     def get_filters(self) -> list[SpatialFilter]:
         """
         Get the list of spatial filters that represent the final data transformation
         for each considered ROI. The filters are generated using the values of
-        :attr:`weights` and :attr:`row_names` properties of the pipeline, as well as
-        :attr:`~PipelineStep.params` property of each step.
+        :meth:`get_weights` and :meth:`get_names` methods of the pipeline, as well as
+        :meth:`~PipelineStep.get_params` method of each step.
 
         Returns
         -------
@@ -170,13 +174,14 @@ class ExtractionPipeline:
             The resulting list of spatial filters.
         """
         self._check_if_prepared()
-        method_params = {repr(step): step.params for step in self.steps}
-        row_names = self.row_names
+        method_params = {repr(step): step.get_params() for step in self.steps}
+        row_names = self.get_names()
+        weights = self.get_weights()
         if row_names is None:
-            row_names = [""] * self.weights.shape[0]
+            row_names = [""] * weights.shape[0]
 
         filters = []
-        for w, name in zip(self.weights, row_names):
+        for w, name in zip(weights, row_names):
             filters.append(
                 SpatialFilter(
                     w,

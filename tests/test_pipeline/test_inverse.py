@@ -9,7 +9,7 @@ def test_inverse_across_methods(default_eeg_setup, method):
     _, inv_op, raw_eeg, _ = default_eeg_setup
 
     inv_step = Inverse(inv_op, method=method, lambda2=1.0 / 9.0)
-    weights = inv_step.fit(raw_eeg).weights
+    weights = inv_step.fit(raw_eeg).get_weights()
 
     # Crop 10 seconds to speed up the test
     raw_eeg_crop = raw_eeg.copy().crop(tmax=10.0)
@@ -29,7 +29,7 @@ def test_inverse_across_lambdas(default_eeg_setup, lambda2):
     _, inv_op, raw_eeg, _ = default_eeg_setup
 
     inv_step = Inverse(inv_op, method="sLORETA", lambda2=lambda2)
-    weights = inv_step.fit(raw_eeg).weights
+    weights = inv_step.fit(raw_eeg).get_weights()
 
     # Crop 10 seconds to speed up the test
     raw_eeg_crop = raw_eeg.copy().crop(tmax=10.0)

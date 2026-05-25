@@ -8,14 +8,6 @@ class PipelineStep:
     prepared : bool
         Indicates whether the step (i.e., the underlying method) has been
         fit to the data.
-    weights : array
-        The weight matrix corresponding to the linear transformation defined
-        by this pipeline step.
-    row_names : list of str
-        Names for rows of the weight matrix that corresponds to this step.
-    params : dict
-        Parameters of the pipeline step that should be saved in the corresponding
-        spatial filter.
     """
 
     def __init__(self):
@@ -124,25 +116,39 @@ class PipelineStep:
         """
         return {}
 
-    @property
-    def weights(self):
+    def get_weights(self):
         """
         The weight matrix corresponding to the linear transformation defined
         by this pipeline step.
-        """
-        raise NotImplementedError("weights property must be implemented by subclasses")
 
-    @property
-    def row_names(self):
+        Returns
+        -------
+        weights : array
+            The weight matrix corresponding to the linear transformation defined
+            by this pipeline step.
+        """
+        raise NotImplementedError("get_weights() must be implemented by subclasses")
+
+    def get_names(self):
         """
         Names for rows of the weight matrix that corresponds to this step.
-        """
-        return
 
-    @property
-    def params(self):
+        Returns
+        -------
+        row_names : list of str
+            Names for rows of the weight matrix that corresponds to this step.
+        """
+        return None
+
+    def get_params(self):
         """
         Parameters of the pipeline step that should be saved in the corresponding
         spatial filter.
+
+        Returns
+        -------
+        params : dict
+            Parameters of the pipeline step that should be saved in the corresponding
+            spatial filter.
         """
         return {}

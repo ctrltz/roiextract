@@ -68,18 +68,15 @@ class MeanAggregation(PipelineStep):
     def _request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
         return dict(src=src, labels=labels)
 
-    @property
-    def weights(self):
+    def get_weights(self):
         self._check_if_prepared()
         return self._weights
 
-    @property
-    def row_names(self):
+    def get_names(self):
         self._check_if_prepared()
         return self.names
 
-    @property
-    def params(self):
+    def get_params(self):
         return dict(flip=self.flip)
 
 
@@ -153,16 +150,13 @@ class CentroidAggregation(PipelineStep):
     def _request_args(self, src, labels, subject=None, subjects_dir=None, **kwargs):
         return dict(src=src, labels=labels, subject=subject, subjects_dir=subjects_dir)
 
-    @property
-    def weights(self):
+    def get_weights(self):
         self._check_if_prepared()
         return self._weights
 
-    @property
-    def row_names(self):
+    def get_names(self):
         self._check_if_prepared()
         return self.names
 
-    @property
-    def params(self):
+    def get_params(self):
         return dict(surf=self.surf)
