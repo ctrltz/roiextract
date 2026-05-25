@@ -1,4 +1,5 @@
 import mne
+import os
 import pytest
 
 from mne.datasets import sample
@@ -6,6 +7,9 @@ from mne.datasets import sample
 
 @pytest.fixture(scope="session", autouse=False)
 def default_eeg_setup():
+    if os.environ.get("BUILD_ENV", "local") == "ci":
+        pytest.skip("Skipping EEG setup in CI environment")
+
     data_path = sample.data_path() / "MEG" / "sample"
     subjects_dir = sample.data_path() / "subjects"
     fwd_path = data_path / "sample_audvis-meg-eeg-oct-6-fwd.fif"

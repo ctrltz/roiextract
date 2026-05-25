@@ -25,7 +25,7 @@ class MeanAggregation(PipelineStep):
         performed in :func:`mne.label_sign_flip`.
     """
 
-    def __init__(self, flip=False):
+    def __init__(self, flip=False) -> None:
         super().__init__()
         self.flip: bool = flip
 
@@ -35,7 +35,7 @@ class MeanAggregation(PipelineStep):
         self.prepared: bool = False
         self._weights: sparse.csr_matrix = sparse.csr_matrix((0, 0))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "MeanFlipAggregation" if self.flip else "MeanAggregation"
 
     def fit(  # type: ignore[override]
