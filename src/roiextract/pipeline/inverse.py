@@ -3,6 +3,7 @@ import numpy as np
 import typing as T
 
 from mne._fiff.constants import FIFF
+from mne.beamformer import make_lcmv, apply_lcmv_raw
 from mne.minimum_norm import (
     apply_inverse_raw,
     InverseOperator,
@@ -139,3 +140,41 @@ class Inverse(PipelineStep):
 
     def get_params(self) -> dict[str, T.Any]:
         return dict(method=self.method, lambda2=self.lambda2, nave=self.nave)
+
+
+class LCMVBeamformer(PipelineStep):
+    def __init__(self, reg: float = 0.05) -> None:
+        super().__init__()
+        self.filters = None
+        self._weights = None
+        self.apply_fun = None
+        self.reg = reg
+
+    def __repr__(self) -> str:
+        return "LCMVBeamformer"
+
+    def fit(self, data: mne.io.BaseRaw, fwd: mne.Forward) -> "LCMVBeamformer":  # type: ignore[override]
+        if not isinstance(data, mne.io.BaseRaw):
+            raise ValueError("Only mne.io.Raw objects are supported")
+
+        self.apply_fun = apply_lcmv_raw
+        self.filters = make_lcmv(data.info, fwd, data.info["sfreq"], reg=self.reg)
+        self._weights = np.array([filt["weights"] for filt in self.filters])
+        self.prepared = True
+        return self
+
+    def transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:
+        self._check_if_prepared()
+        return self.apply_fun(data, self.filters)
+
+    def fit_transform(  # type: ignore[override]
+        self, data: mne.io.BaseRaw, fwd: mne.Forward
+    ) -> mne.SourceEstimate:
+        return self.fit(data, fwd).transform(data)
+
+    def get_weights(self) -> np.ndarray:
+        self._check_if_prepared()
+        return self._weights
+
+    def get_params(self) -> dict[str, T.Any]:
+        return dict(reg=self.reg)

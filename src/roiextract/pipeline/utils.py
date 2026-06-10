@@ -29,3 +29,10 @@ def _get_matrix_from_prepared_inverse_operator(
 
     stc = apply_inverse(evoked, inv_op, method=method, lambda2=lambda2, prepared=True)
     return stc.data
+
+
+def _get_matrix_from_lcmv_filters(filters: list[dict]) -> np.ndarray:
+    """
+    Get the weight matrix from a list of LCMV filters.
+    """
+    return np.array([filt["weights"] for filt in filters])
