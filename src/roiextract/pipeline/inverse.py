@@ -214,7 +214,8 @@ class LCMVBeamformer(PipelineStep):
         """
         Fit the LCMV beamformer to the provided data, optionally using custom
         data and noise covariance matrices. If the custom matrices are not
-        provided, by default, the data covariance is computed from the raw data using :func:`mne.compute_raw_covariance`, and the noise covariance is
+        provided, by default, the data covariance is computed from the raw data
+        using :func:`mne.compute_raw_covariance`, and the noise covariance is
         generated using :func:`mne.make_ad_hoc_cov` with a standard deviation
         of 1.0.
 
@@ -282,12 +283,12 @@ class LCMVBeamformer(PipelineStep):
         noise_cov: mne.Covariance | None = None,
     ) -> mne.SourceEstimate:
         """
-        Fit the inverse operator to the provided data and then apply it.
+        Fit the LCMV beamformer to the provided data and then apply it.
 
         Parameters
         ----------
         data : Raw
-            The raw data to fit and apply the inverse operator on.
+            The raw data to fit and apply the LCMV beamformer on.
         data_cov : Covariance | None, optional
             The data covariance matrix. If None, it will be computed from
             the raw data.
@@ -298,7 +299,7 @@ class LCMVBeamformer(PipelineStep):
         Returns
         -------
         stc : SourceEstimate
-            The source estimate obtained by applying the inverse operator.
+            The source estimate obtained by applying the LCMV beamformer.
         """
         self.fit(data, data_cov=data_cov, noise_cov=noise_cov)
         return self.transform(data)
