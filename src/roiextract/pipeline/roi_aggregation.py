@@ -405,7 +405,7 @@ class SVDAggregation(PipelineStep):
         for i, label in enumerate(self.labels):
             mask = get_label_mask(label, src)
             label_data = data.data[mask, :]
-            U, _, Vh = np.linalg.svd(label_data, full_matrices=False)
+            U, _, _ = np.linalg.svd(label_data, full_matrices=False)
 
             start_idx = i * self.n_components
             end_idx = start_idx + self.n_components
