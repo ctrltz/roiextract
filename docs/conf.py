@@ -72,7 +72,7 @@ autodoc_typing_aliases = {
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 intersphinx_mapping.update(
-    get_intersphinx_mapping(packages={"matplotlib", "mne", "numpy", "python"})
+    get_intersphinx_mapping(packages={"matplotlib", "mne", "numpy", "python", "typing"})
 )
 
 # Numpydoc
@@ -105,4 +105,5 @@ numpydoc_xref_ignore = {
     "n_sources",
     "n_sensors",
     "n_labels",
+    "n_components",
 }
