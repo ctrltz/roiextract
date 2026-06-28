@@ -88,6 +88,7 @@ numpydoc_xref_aliases = {
     "Label": "mne.Label",
     "Raw": "mne.io.Raw",
     "Info": "mne.Info",
+    "Covariance": "mne.Covariance",
     "SourceSpaces": "mne.SourceSpaces",
     "SourceEstimate": "mne.SourceEstimate",
     # ROIextract

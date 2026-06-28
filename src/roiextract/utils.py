@@ -71,7 +71,7 @@ def data2stc(data, src, subject=None):
     )
 
 
-def vertno_to_index(src, hemi, vertno):
+def vertno_to_index(src: mne.SourceSpaces, hemi: str, vertno: int) -> int:
     hemi_idx = ["lh", "rh"].index(hemi)
     index = np.searchsorted(src[hemi_idx]["vertno"], vertno).item()
 
