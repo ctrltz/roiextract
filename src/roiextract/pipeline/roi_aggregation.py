@@ -333,3 +333,118 @@ class CentroidAggregation(PipelineStep):
             The parameters of the aggregation step.
         """
         return dict(surf=self.surf)
+
+
+class SVDAggregation(PipelineStep):
+    """
+    SVD-based aggregation of reconstructed source time courses within the ROI.
+    The time courses of the first ``n_components`` singular vectors are selected
+    as the representative time courses of the ROI.
+
+    Parameters
+    ----------
+    n_components : int, default=1
+        The number of SVD components to retain for each ROI.
+    """
+
+    def __init__(self, n_components: int = 1) -> None:
+        super().__init__()
+        self.n_components: int = n_components
+
+        self.labels: list[mne.Label] = []
+        self.src: mne.SourceSpaces | None = None
+        self._names: list[str] = []
+        self._weights: sparse.csr_matrix = sparse.csr_matrix((0, 0))
+        self._tc: np.ndarray = np.array([])
+
+    def __repr__(self) -> str:
+        return f"SVDAggregation(n_components={self.n_components})"
+
+    def _request_args(
+        self,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> dict[str, T.Any]:
+        return dict(src=src, labels=labels)
+
+    def fit(  # type: ignore[override]
+        self,
+        data: mne.SourceEstimate,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+    ) -> "SVDAggregation":
+        """
+        Fit the SVD aggregation step to the provided data, source space, and labels.
+
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+        src : SourceSpaces
+            The definition of the considered source space for inverse modeling.
+        labels : Label | list of Label
+            The label or list of labels defining the ROIs for which time courses
+            should be extracted.
+
+        Returns
+        -------
+        self : SVDAggregation
+            The fitted aggregation step.
+        """
+        self.labels = labels if isinstance(labels, list) else [labels]
+        n_labels = len(self.labels)
+        self.src = src
+
+        n_sources, n_samples = data.shape
+        weights = sparse.lil_matrix((n_labels * self.n_components, n_sources))
+        tc = np.zeros((n_labels * self.n_components, n_samples))
+        self._names = [""] * (n_labels * self.n_components)
+
+        for i, label in enumerate(self.labels):
+            mask = get_label_mask(label, src)
+            label_data = data.data[mask, :]
+            U, _, Vh = np.linalg.svd(label_data, full_matrices=False)
+
+            start_idx = i * self.n_components
+            end_idx = start_idx + self.n_components
+            weights[start_idx:end_idx, mask] = U[: self.n_components, :]
+            tc[start_idx:end_idx, :] = Vh[: self.n_components, :]
+
+            if self.n_components == 1:
+                self._names[start_idx] = label.name
+            else:
+                self._names[start_idx:end_idx] = [
+                    f"{label.name} (SVD{i+1})" for i in range(self.n_components)
+                ]
+
+        self._weights = weights.tocsr()
+        self.prepared = True
+        return self
+
+    def transform(self, data):
+        self._check_if_prepared()
+        return self._tc
+
+    def fit_transform(
+        self,
+        data: mne.SourceEstimate,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+    ) -> np.ndarray:
+        self._check_if_prepared()
+        self.fit(data, src, labels)
+        return self.transform(data)
+
+    def get_names(self):
+        self._check_if_prepared()
+        return self._names
+
+    def get_params(self) -> dict:
+        return dict(n_components=self.n_components)
+
+    def get_weights(self) -> sparse.csr_matrix:
+        self._check_if_prepared()
+        return self._weights
