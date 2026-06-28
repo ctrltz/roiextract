@@ -3,7 +3,7 @@ import numpy as np
 import typing as T
 
 from mne._fiff.constants import FIFF
-from mne.beamformer import make_lcmv, apply_lcmv_raw
+from mne.beamformer import make_lcmv, apply_lcmv_raw, Beamformer
 from mne.minimum_norm import (
     apply_inverse_raw,
     InverseOperator,
@@ -11,7 +11,10 @@ from mne.minimum_norm import (
 )
 
 from roiextract.pipeline.step import PipelineStep
-from roiextract.pipeline.utils import _get_matrix_from_prepared_inverse_operator
+from roiextract.pipeline.utils import (
+    _get_matrix_from_prepared_inverse_operator,
+    _get_matrix_from_lcmv_filters,
+)
 
 
 class Inverse(PipelineStep):
@@ -143,38 +146,87 @@ class Inverse(PipelineStep):
 
 
 class LCMVBeamformer(PipelineStep):
-    def __init__(self, reg: float = 0.05) -> None:
+    def __init__(
+        self,
+        fwd: mne.Forward,
+        reg: float = 0.05,
+        weight_norm: str = "unit-noise-gain-invariant",
+        cov_tstep: float = 2.0,
+    ) -> None:
         super().__init__()
-        self.filters = None
-        self._weights = None
-        self.apply_fun = None
+        self.fwd = fwd
         self.reg = reg
+        self.weight_norm = weight_norm
+        self.cov_tstep = cov_tstep
+
+        self.filters: Beamformer | None = None
+        self._weights: np.ndarray | None = None
+        self.apply_fun: T.Callable | None = None
 
     def __repr__(self) -> str:
         return "LCMVBeamformer"
 
-    def fit(self, data: mne.io.BaseRaw, fwd: mne.Forward) -> "LCMVBeamformer":  # type: ignore[override]
+    def _request_args(
+        self,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs,
+    ):
+        data_cov = kwargs.get("data_cov", None)
+        noise_cov = kwargs.get("noise_cov", None)
+        return dict(data_cov=data_cov, noise_cov=noise_cov)
+
+    def fit(  # type: ignore[override]
+        self,
+        data: mne.io.BaseRaw,
+        data_cov: mne.Covariance | None = None,
+        noise_cov: mne.Covariance | None = None,
+    ) -> "LCMVBeamformer":
         if not isinstance(data, mne.io.BaseRaw):
             raise ValueError("Only mne.io.Raw objects are supported")
 
+        if data_cov is None:
+            data_cov = mne.compute_raw_covariance(data, tstep=self.cov_tstep)
+
+        if noise_cov is None:
+            noise_cov = mne.make_ad_hoc_cov(data.info, std=1.0)
+
         self.apply_fun = apply_lcmv_raw
-        self.filters = make_lcmv(data.info, fwd, data.info["sfreq"], reg=self.reg)
-        self._weights = np.array([filt["weights"] for filt in self.filters])
+        self.filters = make_lcmv(
+            info=data.info,
+            forward=self.fwd,
+            data_cov=data_cov,
+            reg=self.reg,
+            noise_cov=noise_cov,
+            weight_norm=self.weight_norm,
+        )
+        self._weights = _get_matrix_from_lcmv_filters(data.info, self.filters)
         self.prepared = True
         return self
 
     def transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:
         self._check_if_prepared()
+        assert self.apply_fun is not None
+        assert self.filters is not None
         return self.apply_fun(data, self.filters)
 
     def fit_transform(  # type: ignore[override]
-        self, data: mne.io.BaseRaw, fwd: mne.Forward
+        self,
+        data: mne.io.BaseRaw,
+        data_cov: mne.Covariance | None = None,
+        noise_cov: mne.Covariance | None = None,
     ) -> mne.SourceEstimate:
-        return self.fit(data, fwd).transform(data)
+        self.fit(data, data_cov=data_cov, noise_cov=noise_cov)
+        return self.transform(data)
 
     def get_weights(self) -> np.ndarray:
         self._check_if_prepared()
+        assert self._weights is not None
         return self._weights
 
     def get_params(self) -> dict[str, T.Any]:
-        return dict(reg=self.reg)
+        return dict(
+            reg=self.reg, weight_norm=self.weight_norm, cov_tstep=self.cov_tstep
+        )
