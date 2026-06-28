@@ -19,6 +19,7 @@ Source reconstruction
    :toctree: ../generated/
 
    Inverse
+   LCMVBeamformer
 
 
 ROI aggregation
