@@ -329,7 +329,7 @@ class CentroidAggregation(PipelineStep):
 
         Returns
         -------
-        params : dict
+        params : dict[str, T.Any]
             The parameters of the aggregation step.
         """
         return dict(surf=self.surf)
@@ -400,7 +400,6 @@ class SVDAggregation(PipelineStep):
 
         n_sources, n_samples = data.shape
         weights = sparse.lil_matrix((n_labels * self.n_components, n_sources))
-        tc = np.zeros((n_labels * self.n_components, n_samples))
         self._names = [""] * (n_labels * self.n_components)
 
         for i, label in enumerate(self.labels):
@@ -410,8 +409,7 @@ class SVDAggregation(PipelineStep):
 
             start_idx = i * self.n_components
             end_idx = start_idx + self.n_components
-            weights[start_idx:end_idx, mask] = U[: self.n_components, :]
-            tc[start_idx:end_idx, :] = Vh[: self.n_components, :]
+            weights[start_idx:end_idx, mask] = U[:, : self.n_components].T
 
             if self.n_components == 1:
                 self._names[start_idx] = label.name
@@ -424,25 +422,43 @@ class SVDAggregation(PipelineStep):
         self.prepared = True
         return self
 
-    def transform(self, data):
-        self._check_if_prepared()
-        return self._tc
+    def transform(self, data: mne.SourceEstimate) -> np.ndarray:
+        """
+        Apply the fitted SVD aggregation to the provided data. Unlike other
+        built-in aggregation methods, this method does not use MNE-Python's
+        :func:`mne.extract_label_time_course` function, since it only allows
+        extracting the first SVD component. Instead, the method applies the
+        fitted weight matrix to the data to obtain the SVD-based time courses.
 
-    def fit_transform(
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+
+        Returns
+        -------
+        label_tc : array, shape (n_labels * n_components, n_times)
+            The extracted time courses for each label and SVD component. For
+            label i, the time courses of corresponding SVD components are
+            located at rows ``i * n_components`` to ``(i + 1) * n_components - 1``.
+        """
+        self._check_if_prepared()
+        return self._weights @ data.data
+
+    def fit_transform(  # type: ignore[override]
         self,
         data: mne.SourceEstimate,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
     ) -> np.ndarray:
-        self._check_if_prepared()
         self.fit(data, src, labels)
         return self.transform(data)
 
-    def get_names(self):
+    def get_names(self) -> list[str]:
         self._check_if_prepared()
         return self._names
 
-    def get_params(self) -> dict:
+    def get_params(self) -> dict[str, T.Any]:
         return dict(n_components=self.n_components)
 
     def get_weights(self) -> sparse.csr_matrix:
