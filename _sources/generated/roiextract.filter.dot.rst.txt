@@ -1,0 +1,11 @@
+﻿roiextract.filter.dot
+=====================
+
+.. currentmodule:: roiextract.filter
+
+.. autofunction:: dot
+
+.. _sphx_glr_backref_roiextract.filter.dot:
+
+.. minigallery:: roiextract.filter.dot
+    :add-heading:
