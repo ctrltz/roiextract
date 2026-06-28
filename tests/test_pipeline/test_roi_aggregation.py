@@ -4,7 +4,12 @@ import pytest
 
 from unittest.mock import MagicMock
 
-from roiextract.pipeline import Inverse, MeanAggregation, CentroidAggregation
+from roiextract.pipeline.inverse import Inverse
+from roiextract.pipeline.roi_aggregation import (
+    SVDAggregation,
+    MeanAggregation,
+    CentroidAggregation,
+)
 from roiextract.utils import get_label_mask
 
 
@@ -89,3 +94,52 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
         label.name for label in labels_to_use
     ], "Row names do not match label names"
     assert agg_step.get_params()["surf"] == "custom"
+
+
+@pytest.mark.parametrize("n_labels", [1, 2])
+def test_svd_aggregation__one_component(default_eeg_setup, n_labels):
+    fwd, inv_op, raw_eeg, labels = default_eeg_setup
+    src = fwd["src"]
+    labels_to_use = labels[:n_labels]
+
+    inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
+    stc = inv_step.fit_transform(raw_eeg)
+
+    agg_step = SVDAggregation(n_components=1)
+    label_tc = agg_step.fit_transform(stc, src, labels=labels_to_use)
+    assert label_tc.shape == (n_labels, raw_eeg.times.size)
+
+    # MNE-Python only allows obtaining the first SVD component, check that
+    # the results match up to a sign flip and scaling factor
+    mne_tc = mne.extract_label_time_course(stc, labels_to_use, src, mode="pca_flip")
+    for tc_mne, tc_agg in zip(mne_tc, label_tc):
+        tc_mne /= np.linalg.norm(tc_mne)
+        tc_agg /= np.linalg.norm(tc_agg)
+        dp = np.dot(tc_mne, tc_agg)
+        assert np.isclose(
+            abs(dp), 1.0, atol=1e-9
+        ), "Mismatch between MNE-Python and SVDAggregation results"
+
+    # Check the metadata
+    assert agg_step.get_names() == [
+        label.name for label in labels_to_use
+    ], "Row names do not match label names"
+
+
+def test_svd_aggregation__multiple_components(default_eeg_setup):
+    fwd, inv_op, raw_eeg, labels = default_eeg_setup
+    src = fwd["src"]
+    label_to_use = labels[0]
+
+    inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
+    stc = inv_step.fit_transform(raw_eeg)
+
+    agg_step = SVDAggregation(n_components=3)
+    label_tc = agg_step.fit_transform(stc, src, labels=label_to_use)
+    assert label_tc.shape == (3, raw_eeg.times.size)
+
+    # Check the metadata
+    expected_names = [f"{label_to_use.name} (SVD{i+1})" for i in range(3)]
+    assert (
+        agg_step.get_names() == expected_names
+    ), "Row names do not match expected SVD component names"

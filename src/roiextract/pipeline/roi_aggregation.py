@@ -25,7 +25,7 @@ class MeanAggregation(PipelineStep):
         performed in :func:`mne.label_sign_flip`.
     """
 
-    def __init__(self, flip=False) -> None:
+    def __init__(self, flip: bool = False) -> None:
         super().__init__()
         self.flip: bool = flip
 
@@ -177,7 +177,7 @@ class CentroidAggregation(PipelineStep):
         is forwarded to :meth:`mne.Label.center_of_mass` without modification.
     """
 
-    def __init__(self, surf="sphere") -> None:
+    def __init__(self, surf: str = "sphere") -> None:
         super().__init__()
         self.surf: str = surf
         self.labels: list[mne.Label] = []
@@ -333,3 +333,187 @@ class CentroidAggregation(PipelineStep):
             The parameters of the aggregation step.
         """
         return dict(surf=self.surf)
+
+
+class SVDAggregation(PipelineStep):
+    """
+    SVD-based aggregation of reconstructed source time courses within the ROI.
+    The time courses that correspond to the first ``n_components`` singular
+    vectors are selected as the representative time courses of the ROI.
+
+    Parameters
+    ----------
+    n_components : int, default=1
+        The number of SVD components to retain for each ROI.
+    """
+
+    def __init__(self, n_components: int = 1) -> None:
+        super().__init__()
+        self.n_components: int = n_components
+
+        self.labels: list[mne.Label] = []
+        self.src: mne.SourceSpaces | None = None
+        self._names: list[str] = []
+        self._weights: sparse.csr_matrix = sparse.csr_matrix((0, 0))
+        self._tc: np.ndarray = np.array([])
+
+    def __repr__(self) -> str:
+        return f"SVDAggregation(n_components={self.n_components})"
+
+    def _request_args(
+        self,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> dict[str, T.Any]:
+        return dict(src=src, labels=labels)
+
+    def fit(  # type: ignore[override]
+        self,
+        data: mne.SourceEstimate,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+    ) -> "SVDAggregation":
+        """
+        Fit the SVD aggregation step to the provided data, source space, and labels.
+
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+        src : SourceSpaces
+            The definition of the considered source space for inverse modeling.
+        labels : Label | list of Label
+            The label or list of labels defining the ROIs for which time courses
+            should be extracted.
+
+        Returns
+        -------
+        self : SVDAggregation
+            The fitted aggregation step.
+        """
+        self.labels = labels if isinstance(labels, list) else [labels]
+        n_labels = len(self.labels)
+        self.src = src
+
+        n_sources, n_samples = data.shape
+        weights = sparse.lil_matrix((n_labels * self.n_components, n_sources))
+        self._names = [""] * (n_labels * self.n_components)
+
+        for i, label in enumerate(self.labels):
+            mask = get_label_mask(label, src)
+            label_data = data.data[mask, :]
+            U, _, _ = np.linalg.svd(label_data, full_matrices=False)
+
+            start_idx = i * self.n_components
+            end_idx = start_idx + self.n_components
+            weights[start_idx:end_idx, mask] = U[:, : self.n_components].T
+
+            if self.n_components == 1:
+                self._names[start_idx] = label.name
+            else:
+                self._names[start_idx:end_idx] = [
+                    f"{label.name} (SVD{i+1})" for i in range(self.n_components)
+                ]
+
+        self._weights = weights.tocsr()
+        self.prepared = True
+        return self
+
+    def transform(self, data: mne.SourceEstimate) -> np.ndarray:
+        """
+        Apply the fitted SVD aggregation to the provided data. Unlike other
+        built-in aggregation methods, this method does not use MNE-Python's
+        :func:`mne.extract_label_time_course` function, since it only allows
+        extracting the first SVD component. Instead, the method applies the
+        fitted weight matrix to the data to obtain the SVD-based time courses.
+
+        In case of one SVD component per ROI, the result should match the output
+        of :func:`mne.extract_label_time_course` with ``mode="pca_flip"`` up to a
+        sign flip and scaling factor.
+
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+
+        Returns
+        -------
+        label_tc : array, shape (n_labels * n_components, n_times)
+            The extracted time courses for each label and SVD component. For
+            label i, the time courses of corresponding SVD components are
+            located at rows ``i * n_components`` to ``(i + 1) * n_components - 1``.
+        """
+        self._check_if_prepared()
+        return self._weights @ data.data
+
+    def fit_transform(  # type: ignore[override]
+        self,
+        data: mne.SourceEstimate,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+    ) -> np.ndarray:
+        """
+        Fit and apply the SVD aggregation to the provided data, source space,
+        and labels.
+
+        Parameters
+        ----------
+        data : SourceEstimate
+            The source estimate containing the reconstructed source time courses.
+        src : SourceSpaces
+            The definition of the considered source space for inverse modeling.
+        labels : Label | list of Label
+            The label or list of labels defining the ROIs for which time courses
+            should be extracted.
+
+        Returns
+        -------
+        label_tc : array, shape (n_labels * n_components, n_times)
+            The extracted time courses for each label and SVD component.
+        """
+        self.fit(data, src, labels)
+        return self.transform(data)
+
+    def get_names(self) -> list[str]:
+        """
+        Get the names of the rows of the weight matrix, which correspond to the
+        extracted time courses for each label and SVD component.
+
+        Returns
+        -------
+        names : list of str
+            The names of the rows of the weight matrix. If more than one SVD
+            component per ROI is extracted, the names are formatted as
+            ``"<ROI_name> (SVD<component_index>)"``.
+        """
+        self._check_if_prepared()
+        return self._names
+
+    def get_params(self) -> dict[str, T.Any]:
+        """
+        Get the parameters of the SVD aggregation step as a dictionary.
+
+        Returns
+        -------
+        params : dict
+            The parameters of the aggregation step, including the number of
+            SVD components to retain for each ROI.
+        """
+        return dict(n_components=self.n_components)
+
+    def get_weights(self) -> sparse.csr_matrix:
+        """
+        Get the weight matrix corresponding to the resulting SVD aggregation
+        transformation.
+
+        Returns
+        -------
+        weights : array
+            The weight matrix that contains the SVD-based weights for each ROI
+            and component.
+        """
+        self._check_if_prepared()
+        return self._weights

@@ -29,3 +29,4 @@ ROI aggregation
 
    MeanAggregation
    CentroidAggregation
+   SVDAggregation
