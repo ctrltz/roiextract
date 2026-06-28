@@ -42,7 +42,8 @@ class Inverse(PipelineStep):
         if inv["source_ori"] != FIFF.FIFFV_MNE_FIXED_ORI:
             raise ValueError("Only fixed source orientations are supported")
 
-        self._inv_op: InverseOperator = inv.copy()
+        self._inv_orig: InverseOperator = inv.copy()
+        self._inv_prepared: InverseOperator = inv.copy()
         self.method: str = method
         self.lambda2: float = lambda2
         self.nave: int = nave
@@ -69,11 +70,14 @@ class Inverse(PipelineStep):
             raise ValueError("Only mne.io.Raw objects are supported")
 
         self.apply_fun = apply_inverse_raw
-        self._inv_op = prepare_inverse_operator(
-            orig=self._inv_op, nave=self.nave, lambda2=self.lambda2, method=self.method
+        self._inv_prepared = prepare_inverse_operator(
+            orig=self._inv_orig,
+            nave=self.nave,
+            lambda2=self.lambda2,
+            method=self.method,
         )
         self._weights = _get_matrix_from_prepared_inverse_operator(
-            self._inv_op, self.method, self.lambda2
+            self._inv_prepared, self.method, self.lambda2
         )
         self.prepared = True
 
@@ -98,7 +102,11 @@ class Inverse(PipelineStep):
             raise RuntimeError("The apply function has not been set. Call fit() first.")
 
         return self.apply_fun(
-            data, self._inv_op, method=self.method, lambda2=self.lambda2, prepared=True
+            data,
+            self._inv_prepared,
+            method=self.method,
+            lambda2=self.lambda2,
+            prepared=True,
         )
 
     def fit_transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:  # type: ignore[override]
