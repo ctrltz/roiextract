@@ -430,6 +430,10 @@ class SVDAggregation(PipelineStep):
         extracting the first SVD component. Instead, the method applies the
         fitted weight matrix to the data to obtain the SVD-based time courses.
 
+        In case of one SVD component per ROI, the result should match the output
+        of :func:`mne.extract_label_time_course` with ``mode="pca_flip"`` up to a
+        sign flip and scaling factor.
+
         Parameters
         ----------
         data : SourceEstimate
