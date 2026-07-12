@@ -1,13 +1,12 @@
+import mne
 import numpy as np
 
 from functools import partial
 
-from .analytic import (
-    _ctf_optimize_ratio,
-    ctf_optimize_ratio_similarity
-)
+from .analytic import _ctf_optimize_ratio, ctf_optimize_ratio_similarity
 from .filter import SpatialFilter
 from .numerical import ctf_optimize_ratio_homogeneity
+from roiextract.prepare import prepare_leadfield, prepare_label_mask
 from .quantify import ctf_quantify
 from .utils import (
     get_label_mask,
@@ -209,11 +208,53 @@ def ctf_optimize_label(
     )
 
 
-def ctf_optimize_ratio(fwd, label, reg=0.001):
+def ctf_optimize_ratio(
+    fwd: mne.Forward | np.ndarray,
+    label: mne.Label | mne.BiHemiLabel | np.ndarray,
+    reg: float = 0.001,
+    return_filter: bool = True,
+) -> SpatialFilter | np.ndarray:
+    """
+    Obtain a spatial filter that optimizes the CTF ratio for a given lead
+    field and ROI.
+
+    Parameters
+    ----------
+    fwd : Forward | array
+        The forward model, passed either as an :class:`mne.Forward` object
+        or directly as a lead field matrix.
+
+        .. note::
+            Currently, only fixed source orientations are supported.
+
+    label : Label | BiHemiLabel | array
+        The :class:`mne.Label` defining the region of interest (ROI) or a binary
+        mask indicating the sources of interest among those present in the lead
+        field.
+
+    reg : float, optional
+        Regularization parameter applied to the lead field matrix. By default,
+        it is set to ``0.001`` to ensure numerical stability while still resulting
+        in a high CTF ratio.
+
+    return_filter : bool, optional
+        If ``True`` (default), wraps the optimized filter in a
+        :class:`SpatialFilter` object. Otherwise, an array of filter weights
+        is returned.
+
+    Returns
+    -------
+    sf : SpatialFilter | array
+        The optimized spatial filter wrapped in a :class:`SpatialFilter` object
+        or an array of filter weights, depending on the value of ``return_filter``.
+    """
     leadfield = prepare_leadfield(fwd)
     mask = prepare_label_mask(label, fwd)
 
     w = _ctf_optimize_ratio(leadfield, mask, reg)
+    if not return_filter:
+        return w
+
     return SpatialFilter(
         w=w,
         method="ctf_optimize_ratio",
@@ -221,4 +262,3 @@ def ctf_optimize_ratio(fwd, label, reg=0.001):
         ch_names=fwd.ch_names,
         name=label.name,
     )
-

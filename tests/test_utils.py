@@ -56,6 +56,18 @@ def test_get_label_mask(hemi, vertices, expected_mask):
     assert np.array_equal(mask, np.array(expected_mask).astype(bool))
 
 
+def test_get_label_mask__bihemilabel():
+    test_src = [{"vertno": [1, 3, 5, 7]}, {"vertno": [0, 2, 4, 6, 8]}]
+    test_label = mne.BiHemiLabel(
+        lh=mne.Label(hemi="lh", vertices=[3, 5]),
+        rh=mne.Label(hemi="rh", vertices=[0, 4]),
+    )
+    # lh -> rh vertices:      1  3  5  7  0  2  4  6  8
+    expected_mask = np.array([0, 1, 1, 0, 1, 0, 1, 0, 0]).astype(bool)
+    mask = get_label_mask(test_label, test_src)
+    assert np.array_equal(mask, expected_mask)
+
+
 @patch("roiextract.utils.label_sign_flip")
 @pytest.mark.parametrize(
     "initial,expected",

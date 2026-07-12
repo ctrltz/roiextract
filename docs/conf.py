@@ -86,6 +86,7 @@ numpydoc_xref_aliases = {
     "Forward": "mne.Forward",
     "InverseOperator": "mne.minimum_norm.InverseOperator",
     "Label": "mne.Label",
+    "BiHemiLabel": "mne.BiHemiLabel",
     "Raw": "mne.io.Raw",
     "Info": "mne.Info",
     "Covariance": "mne.Covariance",

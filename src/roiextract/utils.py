@@ -17,15 +17,17 @@ def _report_props(props):
     return ", ".join([f"{k}={v:.2g}" for k, v in props.items()])
 
 
-def get_label_mask(label, src) -> np.ndarray:
+def get_label_mask(
+    label: mne.Label | mne.BiHemiLabel, src: mne.SourceSpaces
+) -> np.ndarray:
     """
     Get a binary mask for vertices of the provided source space that
     belong to the specified ROI.
 
     Parameters
     ----------
-    label : Label
-        The ROI to consider.
+    label : Label | BiHemiLabel
+        The FreeSurfer label defining the ROI.
     src : SourceSpaces
         The source space that defines all candidate source locations.
 
@@ -33,21 +35,31 @@ def get_label_mask(label, src) -> np.ndarray:
     -------
     mask : array, shape (n_sources,)
         A vector with one logical value for each source in ``src``:
-        True if it belongs to the ROI, False otherwise.
+        ``True`` if it belongs to the ROI, ``False`` otherwise.
     """
     vertno = [s["vertno"] for s in src]
     nvert = [len(vn) for vn in vertno]
-    if label.hemi == "lh":
-        this_vertices = np.intersect1d(vertno[0], label.vertices)
-        vert = np.searchsorted(vertno[0], this_vertices)
-    elif label.hemi == "rh":
-        this_vertices = np.intersect1d(vertno[1], label.vertices)
-        vert = nvert[0] + np.searchsorted(vertno[1], this_vertices)
-    else:
-        raise ValueError("label %s has invalid hemi" % label.name)
+
+    labels_to_process = [label]
+    if isinstance(label, mne.BiHemiLabel):
+        labels_to_process = [label.lh, label.rh]
 
     mask = np.zeros((sum(nvert),), dtype=int)
-    mask[vert] = 1
+    for label in labels_to_process:
+        if label.hemi == "lh":
+            this_vertices = np.intersect1d(vertno[0], label.vertices)
+            vert = np.searchsorted(vertno[0], this_vertices)
+            mask[vert] = 1
+        elif label.hemi == "rh":
+            this_vertices = np.intersect1d(vertno[1], label.vertices)
+            vert = nvert[0] + np.searchsorted(vertno[1], this_vertices)
+            mask[vert] = 1
+        else:
+            raise ValueError(
+                f"Label {label.name} has invalid value of hemi, cannot "
+                f"create its mask. Expected 'lh' or 'rh', got {label.hemi}."
+            )
+
     return mask > 0
 
 
