@@ -1,10 +1,11 @@
 import mne
 import numpy as np
 
+from mne._fiff.constants import FIFF
 from mne.label import label_sign_flip
 
-from ctfopt.roiextract.filter import SpatialFilter
-from ctfopt.roiextract.utils import get_label_mask, _check_input
+from roiextract.filter import SpatialFilter
+from roiextract.utils import get_label_mask, _check_input
 
 
 def prepare_filter(sf):
@@ -14,11 +15,28 @@ def prepare_filter(sf):
     return sf.w
 
 
-def prepare_leadfield(fwd):
+def prepare_leadfield(fwd: mne.Forward | np.ndarray) -> np.ndarray:
+    """
+    Extract the lead field matrix from the provided forward model.
+
+    Parameters
+    ----------
+    fwd : mne.Forward | np.ndarray
+        The forward model or lead field matrix. If a forward model is provided,
+        the lead field matrix will be extracted from it. Otherwise, the provided
+        lead field matrix will be returned as is.
+
+    Returns
+    -------
+    leadfield : np.ndarray
+        The lead field matrix.
+    """
     if not isinstance(fwd, mne.Forward):
         return fwd
 
-    # NOTE: fixed orientations only
+    if fwd["source_ori"] != FIFF.FIFFV_MNE_FIXED_ORI:
+        raise ValueError("Only fixed source orientations are currently supported.")
+
     return fwd["sol"]["data"]
 
 
