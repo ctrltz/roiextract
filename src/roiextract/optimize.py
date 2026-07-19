@@ -213,6 +213,8 @@ def ctf_optimize_ratio(
     label: mne.Label | mne.BiHemiLabel | np.ndarray,
     reg: float = 0.001,
     return_filter: bool = True,
+    ch_names: list[str] | None = None,
+    name: str | None = None,
 ) -> SpatialFilter | np.ndarray:
     """
     Obtain a spatial filter that optimizes the CTF ratio for a given lead
@@ -242,6 +244,15 @@ def ctf_optimize_ratio(
         :class:`SpatialFilter` object. Otherwise, an array of filter weights
         is returned.
 
+    ch_names : list of str | None, optional
+        The names of the channels corresponding to the lead field. If ``None``
+        (default), the channel names are extracted from the :class:`mne.Forward`
+        object.
+
+    name : str | None, optional
+        The name of the spatial filter. If ``None`` (default), the name is taken
+        from the provided :class:`mne.Label` object.
+
     Returns
     -------
     sf : SpatialFilter | array
@@ -250,6 +261,10 @@ def ctf_optimize_ratio(
     """
     leadfield = prepare_leadfield(fwd)
     mask = prepare_label_mask(label, fwd)
+    if ch_names is None and isinstance(fwd, mne.Forward):
+        ch_names = fwd.ch_names
+    if name is None and isinstance(label, mne.Label):
+        name = label.name
 
     w = _ctf_optimize_ratio(leadfield, mask, reg)
     if not return_filter:
@@ -259,6 +274,6 @@ def ctf_optimize_ratio(
         w=w,
         method="ctf_optimize_ratio",
         method_params=dict(reg=reg),
-        ch_names=fwd.ch_names,
-        name=label.name,
+        ch_names=ch_names,
+        name=name,
     )
