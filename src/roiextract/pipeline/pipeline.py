@@ -34,7 +34,7 @@ class ExtractionPipeline:
                 "All steps should be instances of a subclass of PipelineStep."
             )
 
-        self.steps = list(steps)
+        self.steps = [s.copy() for s in steps]
         self._names: list[str] | None = None
         self.prepared = False
 

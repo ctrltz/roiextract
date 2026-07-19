@@ -92,6 +92,15 @@ def test_extraction_pipeline_repr():
     assert repr(pipeline) == "ExtractionPipeline <2 steps: Step1, Step2>"
 
 
+def test_extraction_pipeline__uses_copied_steps():
+    step1 = Step1()
+    pipeline = ExtractionPipeline(steps=[step1])
+
+    # Modify the original steps after creating the pipeline
+    step1.prepared = True
+    assert not pipeline.steps[0].prepared  # The pipeline should use a copy of step1
+
+
 def test_extraction_pipeline_fit():
     step1 = Step1()
     step2 = Step2(raise_error_on_transform=True)
@@ -100,8 +109,8 @@ def test_extraction_pipeline_fit():
     # NOTE: Step2.transform() raises an error but it should not be called
     pipeline.fit(data=1, src=None, labels=None)
 
-    assert step1.prepared
-    assert step2.prepared
+    for step in pipeline.steps:
+        assert step.prepared
     assert pipeline.prepared
 
 

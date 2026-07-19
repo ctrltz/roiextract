@@ -1,3 +1,4 @@
+import copy
 import mne
 import typing as T
 
@@ -35,6 +36,17 @@ class PipelineStep:
             raise RuntimeError(
                 "The pipeline step has not been prepared. Call fit() first."
             )
+
+    def copy(self) -> "PipelineStep":
+        """
+        Create a copy of the pipeline step.
+
+        Returns
+        -------
+        copy : PipelineStep
+            A copy of the pipeline step.
+        """
+        return copy.deepcopy(self)
 
     def fit(self, data: T.Any, **kwargs: T.Any) -> "PipelineStep":
         """
