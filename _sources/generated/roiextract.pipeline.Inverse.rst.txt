@@ -1,0 +1,14 @@
+﻿roiextract.pipeline.Inverse
+===========================
+
+.. currentmodule:: roiextract.pipeline
+
+.. autoclass:: Inverse
+   :special-members: __contains__,__getitem__,__iter__,__len__,__add__,__sub__,__mul__,__div__,__neg__
+   :members:
+   :inherited-members:
+
+.. _sphx_glr_backreferences_roiextract.pipeline.Inverse:
+
+.. minigallery:: roiextract.pipeline.Inverse
+    :add-heading:
