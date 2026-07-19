@@ -29,6 +29,7 @@ extensions = [
     # contrib
     "numpydoc",
     "sphinx_copybutton",
+    "sphinxcontrib.bibtex",
     # "sphinx_gallery.gen_gallery",
 ]
 
@@ -70,7 +71,10 @@ autodoc_typing_aliases = {
 
 # -- Intersphinx settings ----------------------------------------------------
 
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "mne_connectivity": ("https://mne.tools/mne-connectivity/stable/", None),
+    "python": ("https://docs.python.org/3", None),
+}
 intersphinx_mapping.update(
     get_intersphinx_mapping(packages={"matplotlib", "mne", "numpy", "python", "typing"})
 )
@@ -108,3 +112,7 @@ numpydoc_xref_ignore = {
     "n_labels",
     "n_components",
 }
+
+# BibTeX
+bibtex_bibfiles = ["references.bib"]
+bibtex_default_style = "unsrt"

@@ -2,6 +2,7 @@ import mne
 import numpy as np
 import typing as T
 
+
 from roiextract.filter import SpatialFilter
 from roiextract.pipeline.step import PipelineStep
 
@@ -24,8 +25,8 @@ class ExtractionPipeline:
         Indicates whether the pipeline has been fit to the data.
     """
 
-    def __init__(self, steps: T.Iterable[PipelineStep]) -> None:
-        if not isinstance(steps, T.Iterable) or not steps:
+    def __init__(self, steps: list[PipelineStep] | tuple[PipelineStep, ...]) -> None:
+        if not isinstance(steps, list | tuple) or not steps:
             raise ValueError("Expected at least one step in the pipeline.")
 
         if not all(isinstance(step, PipelineStep) for step in steps):
@@ -33,8 +34,8 @@ class ExtractionPipeline:
                 "All steps should be instances of a subclass of PipelineStep."
             )
 
-        self.steps = steps
-        self._names = None
+        self.steps = list(steps)
+        self._names: list[str] | None = None
         self.prepared = False
 
     def __len__(self) -> int:

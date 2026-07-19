@@ -30,3 +30,11 @@ ROI aggregation
    MeanAggregation
    CentroidAggregation
    SVDAggregation
+
+
+Leakage correction
+------------------
+.. autosummary::
+   :toctree: ../generated/
+
+   SymmetricOrthogonalization

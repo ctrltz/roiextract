@@ -30,6 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "mne-connectivity",
     "mock",
     "mypy",
     "pre-commit",
@@ -44,6 +45,7 @@ docs = [
     "sphinx",
     "sphinx-copybutton",
     "sphinx-gallery",
+    "sphinxcontrib-bibtex"
 ]
 
 [tool.pytest.ini_options]

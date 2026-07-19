@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import typing as T
 
 from roiextract.pipeline import PipelineStep
 
@@ -15,9 +16,8 @@ class RankDeficiencyError(Exception):
 
 class SymmetricOrthogonalization(PipelineStep):
     """
-    A pipeline step that performs symmetric orthogonalization of the input time
-    series, following (Colclough et al., 2015) and being based on the
-    :meth:`mne_connectivity.symmetric_orth` implementation. This step is useful
+    Symmetric orthogonalization of the input time series. The implementation follows :footcite:p:`Colclough2015` and is based on the
+    :func:`mne_connectivity.symmetric_orth` implementation. This step is useful
     for reducing the effects of signal leakage in source-reconstructed MEG/EEG
     data.
 
@@ -29,7 +29,14 @@ class SymmetricOrthogonalization(PipelineStep):
         The tolerance for convergence. The algorithm stops when the relative
         change in the error is below this threshold.
     use_previous_d : bool, optional
-        Set this to `True` to match the MNE-connectivity implementation.
+        Set this to ``True`` to match the MNE-connectivity implementation. By
+        default, only the D matrix from the final iteration is used for
+        calculating the orthogonalization weights. See the reference paper
+        and source code for more details.
+
+    References
+    ----------
+    .. footbibliography::
     """
 
     def __init__(
@@ -41,15 +48,15 @@ class SymmetricOrthogonalization(PipelineStep):
         self.tol = tol
         self.use_previous_d = use_previous_d
 
-        self._weights = None
+        self._weights = np.array([])
 
-    def fit(self, data, **kwargs):
+    def fit(self, data: np.ndarray, **kwargs: T.Any) -> "SymmetricOrthogonalization":
         """
         Fit the symmetric orthogonalization step to the provided data.
 
         Parameters
         ----------
-        data : array-like
+        data : array
             The input data to fit the step to.
 
         Returns
@@ -63,27 +70,44 @@ class SymmetricOrthogonalization(PipelineStep):
         self.prepared = True
         return self
 
-    def transform(self, data):  # type: ignore[override]
+    def transform(self, data: np.ndarray) -> np.ndarray:  # type: ignore[override]
         """
         Apply symmetric orthogonalization to the provided data.
 
         Parameters
         ----------
-        data : array-like
+        data : array
             The input data to transform.
 
         Returns
         -------
-        transformed_data : array-like
+        transformed_data : array
             The transformed data after applying symmetric orthogonalization.
         """
         self._check_if_prepared()
         return self._weights @ data
 
-    def fit_transform(self, data):  # type: ignore[override]
+    def fit_transform(self, data: np.ndarray) -> np.ndarray:  # type: ignore[override]
+        """
+        Fit the step to the provided data and then apply symmetric orthogonalization.
+
+        Parameters
+        ----------
+        data : array
+            The input data to fit and transform.
+        """
         return super().fit_transform(data)
 
-    def get_weights(self):
+    def get_weights(self) -> np.ndarray:
+        """
+        Get the weight matrix corresponding to the linear transformation
+        defined by the symmetric orthogonalization step.
+
+        Returns
+        -------
+        weights : array
+            The weight matrix.
+        """
         self._check_if_prepared()
         return self._weights
 
@@ -108,6 +132,15 @@ class SymmetricOrthogonalization(PipelineStep):
         return names
 
     def get_params(self):
+        """
+        Get the parameters of the symmetric orthogonalization step as a dictionary.
+
+        Returns
+        -------
+        params : dict
+            A dictionary containing the parameters of the symmetric
+            orthogonalization step.
+        """
         return dict(
             n_iter=self.n_iter, tol=self.tol, use_previous_d=self.use_previous_d
         )
@@ -155,7 +188,7 @@ def _get_symmetric_orthogonalization_weights(
 
     # "starting with D^(1) = I_n"
     d = np.ones(n_series)
-    d_prev = None
+    d_prev = d.copy()
 
     last_err = np.inf
     power = np.linalg.norm(Z, "fro") ** 2
