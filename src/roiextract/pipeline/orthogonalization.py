@@ -16,7 +16,8 @@ class RankDeficiencyError(Exception):
 
 class SymmetricOrthogonalization(PipelineStep):
     """
-    Symmetric orthogonalization of the input time series. The implementation follows :footcite:p:`Colclough2015` and is based on the
+    Symmetric orthogonalization of the input time series. The implementation follows
+    :footcite:p:`Colclough2015` and is based on the
     :func:`mne_connectivity.symmetric_orth` implementation. This step is useful
     for reducing the effects of signal leakage in source-reconstructed MEG/EEG
     data.
@@ -49,6 +50,9 @@ class SymmetricOrthogonalization(PipelineStep):
         self.use_previous_d = use_previous_d
 
         self._weights = np.array([])
+
+    def __repr__(self) -> str:
+        return "SymmetricOrthogonalization"
 
     def fit(self, data: np.ndarray, **kwargs: T.Any) -> "SymmetricOrthogonalization":
         """
