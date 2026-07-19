@@ -144,9 +144,15 @@ class PipelineStep:
         """
         raise NotImplementedError("get_weights() must be implemented by subclasses")
 
-    def get_names(self) -> list[str] | None:
+    def get_names(self, names: list[str] | None) -> list[str] | None:
         """
         Names for rows of the weight matrix that corresponds to this step.
+
+        Parameters
+        ----------
+        names : list of str | None
+            Names for rows of the weight matrix that corresponds to the previous
+            step in the pipeline. None if the names are not available.
 
         Returns
         -------

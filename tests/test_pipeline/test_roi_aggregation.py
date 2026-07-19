@@ -36,7 +36,7 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
 
     # Check the metadata
     assert ("Flip" in repr(agg_step)) == flip
-    assert agg_step.get_names() == [
+    assert agg_step.get_names(None) == [
         label.name for label in labels_to_use
     ], "Row names do not match label names"
     assert agg_step.get_params()["flip"] == flip
@@ -90,7 +90,7 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
     assert np.allclose(label_tc, extracted, atol=1e-9)
 
     # Check the metadata
-    assert agg_step.get_names() == [
+    assert agg_step.get_names(None) == [
         label.name for label in labels_to_use
     ], "Row names do not match label names"
     assert agg_step.get_params()["surf"] == "custom"
@@ -121,7 +121,7 @@ def test_svd_aggregation__one_component(default_eeg_setup, n_labels):
         ), "Mismatch between MNE-Python and SVDAggregation results"
 
     # Check the metadata
-    assert agg_step.get_names() == [
+    assert agg_step.get_names(None) == [
         label.name for label in labels_to_use
     ], "Row names do not match label names"
 
@@ -141,5 +141,5 @@ def test_svd_aggregation__multiple_components(default_eeg_setup):
     # Check the metadata
     expected_names = [f"{label_to_use.name} (SVD{i+1})" for i in range(3)]
     assert (
-        agg_step.get_names() == expected_names
+        agg_step.get_names(None) == expected_names
     ), "Row names do not match expected SVD component names"

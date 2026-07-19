@@ -80,7 +80,7 @@ class Step2(PipelineStep):
     def get_weights(self):
         return np.array([[1, -1]])
 
-    def get_names(self):
+    def get_names(self, names: list[str] | None) -> list[str]:
         return ["Row1"]
 
     def get_params(self):

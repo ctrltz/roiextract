@@ -2,6 +2,7 @@ import mne
 import numpy as np
 import typing as T
 
+
 from roiextract.filter import SpatialFilter
 from roiextract.pipeline.step import PipelineStep
 
@@ -24,8 +25,8 @@ class ExtractionPipeline:
         Indicates whether the pipeline has been fit to the data.
     """
 
-    def __init__(self, steps: list[PipelineStep]) -> None:
-        if not isinstance(steps, list) or not steps:
+    def __init__(self, steps: list[PipelineStep] | tuple[PipelineStep, ...]) -> None:
+        if not isinstance(steps, list | tuple) or not steps:
             raise ValueError("Expected at least one step in the pipeline.")
 
         if not all(isinstance(step, PipelineStep) for step in steps):
@@ -33,7 +34,8 @@ class ExtractionPipeline:
                 "All steps should be instances of a subclass of PipelineStep."
             )
 
-        self.steps = steps
+        self.steps = list(steps)
+        self._names: list[str] | None = None
         self.prepared = False
 
     def __len__(self) -> int:
@@ -91,6 +93,7 @@ class ExtractionPipeline:
         specific arguments by overriding the :meth:`PipelineStep._request_args()`
         method.
         """
+        self._names = getattr(data, "ch_names", None)
         for idx, step in enumerate(self.steps):
             step_args = step._request_args(src, labels, subject, subjects_dir, **kwargs)
 
@@ -98,6 +101,8 @@ class ExtractionPipeline:
                 data = step.fit_transform(data, **step_args)
             else:
                 step.fit(data, **step_args)
+
+            self._names = step.get_names(self._names)
         self.prepared = True
 
         return self
@@ -168,11 +173,11 @@ class ExtractionPipeline:
         Returns
         -------
         row_names : list of str | None
-            Names for rows of the weight matrix that corresponds to the entire pipeline,
-            or None if the names are not available.
+            Names for rows of the weight matrix that corresponds to the entire
+            pipeline, or None if the names are not available.
         """
         self._check_if_prepared()
-        return self.steps[-1].get_names()
+        return self._names
 
     def get_filters(self) -> list[SpatialFilter]:
         """
