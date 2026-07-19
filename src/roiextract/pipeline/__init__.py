@@ -1,6 +1,7 @@
 from roiextract.pipeline.step import PipelineStep
 
 from roiextract.pipeline.inverse import Inverse, LCMVBeamformer
+from roiextract.pipeline.orthogonalization import SymmetricOrthogonalization
 from roiextract.pipeline.roi_aggregation import (
     MeanAggregation,
     CentroidAggregation,
@@ -18,4 +19,5 @@ __all__ = [
     "MeanAggregation",
     "CentroidAggregation",
     "SVDAggregation",
+    "SymmetricOrthogonalization",
 ]

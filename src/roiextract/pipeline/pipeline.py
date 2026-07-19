@@ -24,8 +24,8 @@ class ExtractionPipeline:
         Indicates whether the pipeline has been fit to the data.
     """
 
-    def __init__(self, steps: list[PipelineStep]) -> None:
-        if not isinstance(steps, list) or not steps:
+    def __init__(self, steps: T.Iterable[PipelineStep]) -> None:
+        if not isinstance(steps, T.Iterable) or not steps:
             raise ValueError("Expected at least one step in the pipeline.")
 
         if not all(isinstance(step, PipelineStep) for step in steps):
@@ -34,6 +34,7 @@ class ExtractionPipeline:
             )
 
         self.steps = steps
+        self._names = None
         self.prepared = False
 
     def __len__(self) -> int:
@@ -91,6 +92,7 @@ class ExtractionPipeline:
         specific arguments by overriding the :meth:`PipelineStep._request_args()`
         method.
         """
+        self._names = getattr(data, "ch_names", None)
         for idx, step in enumerate(self.steps):
             step_args = step._request_args(src, labels, subject, subjects_dir, **kwargs)
 
@@ -98,6 +100,8 @@ class ExtractionPipeline:
                 data = step.fit_transform(data, **step_args)
             else:
                 step.fit(data, **step_args)
+
+            self._names = step.get_names(self._names)
         self.prepared = True
 
         return self
@@ -168,11 +172,11 @@ class ExtractionPipeline:
         Returns
         -------
         row_names : list of str | None
-            Names for rows of the weight matrix that corresponds to the entire pipeline,
-            or None if the names are not available.
+            Names for rows of the weight matrix that corresponds to the entire
+            pipeline, or None if the names are not available.
         """
         self._check_if_prepared()
-        return self.steps[-1].get_names()
+        return self._names
 
     def get_filters(self) -> list[SpatialFilter]:
         """

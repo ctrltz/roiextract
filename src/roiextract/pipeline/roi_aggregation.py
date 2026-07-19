@@ -140,9 +140,15 @@ class MeanAggregation(PipelineStep):
         self._check_if_prepared()
         return self._weights
 
-    def get_names(self) -> list[str]:
+    def get_names(self, names: list[str] | None) -> list[str]:
         """
         Label names are used as names for rows of the weight matrix.
+
+        Parameters
+        ----------
+        names : list of str | None
+            This parameter is not used in the implementation, label names are
+            always used as row names.
 
         Returns
         -------
@@ -311,9 +317,15 @@ class CentroidAggregation(PipelineStep):
         self._check_if_prepared()
         return self._weights
 
-    def get_names(self) -> list[str] | None:
+    def get_names(self, names: list[str] | None) -> list[str] | None:
         """
         Label names are used as names for rows of the weight matrix.
+
+        Parameters
+        ----------
+        names : list of str | None
+            This parameter is not used in the implementation, label names are
+            always used as row names.
 
         Returns
         -------
@@ -477,10 +489,16 @@ class SVDAggregation(PipelineStep):
         self.fit(data, src, labels)
         return self.transform(data)
 
-    def get_names(self) -> list[str]:
+    def get_names(self, names: list[str] | None) -> list[str]:
         """
         Get the names of the rows of the weight matrix, which correspond to the
         extracted time courses for each label and SVD component.
+
+        Parameters
+        ----------
+        names : list of str | None
+            This parameter is not used in the implementation, label names and
+            component indices are always used to define row names.
 
         Returns
         -------
