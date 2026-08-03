@@ -261,6 +261,22 @@ class PipelineSet:
             )
         return self
 
+    def transform(self, data: mne.io.BaseRaw) -> T.Generator[np.ndarray, None, None]:
+        for pipeline in self.pipelines:
+            yield pipeline.transform(data)
+
+    def fit_transform(
+        self,
+        data: mne.io.BaseRaw,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> T.Generator[np.ndarray, None, None]:
+        self.fit(data, src, labels, subject, subjects_dir, **kwargs)
+        yield from self.transform(data)
+
     def get_fitted_step(self, step_key: str) -> PipelineStep | None:
         """
         Retrieve a fitted step from the cache based on its key.
