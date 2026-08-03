@@ -1,7 +1,7 @@
+import logging
 import mne
 import numpy as np
 import typing as T
-
 
 from roiextract.filter import SpatialFilter
 from roiextract.pipeline.step import PipelineStep
@@ -56,6 +56,7 @@ class ExtractionPipeline:
         labels: mne.Label | list[mne.Label],
         subject: str | None = None,
         subjects_dir: str | None = None,
+        step_cache: dict | type["PipelineSet"] | None = None,
         **kwargs: T.Any,
     ) -> "ExtractionPipeline":
         """
@@ -78,6 +79,9 @@ class ExtractionPipeline:
             The directory containing the subjects' MRI data. Currently, this argument
             is only used by centroid-based aggregation to compute the center of mass
             of the ROIs.
+        step_cache: dict | PipelineSet, optional
+            The cache to store fitted steps. This argument is used to
+            share fitted steps between pipelines.
         **kwargs
             Additional keyword arguments that may be required for fitting the pipeline.
 
@@ -94,15 +98,33 @@ class ExtractionPipeline:
         method.
         """
         self._names = getattr(data, "ch_names", None)
+        consider_cache = step_cache is not None
+        step_key = ""
         for idx, step in enumerate(self.steps):
-            step_args = step._request_args(src, labels, subject, subjects_dir, **kwargs)
+            step_key = f"{step_key}_{repr(step)}"
+            cached_step = None
+            if consider_cache:
+                cached_step = step_cache.get_fitted_step(step_key)
 
-            if idx < len(self) - 1:
-                data = step.fit_transform(data, **step_args)
+            if cached_step is not None:
+                logging.debug(f"Using fitted step {step_key}")
+                self.steps[idx] = cached_step.copy()
+                data = cached_step.transform(data)
+                self._names = cached_step.get_names(self._names)
             else:
-                step.fit(data, **step_args)
+                step_args = step._request_args(
+                    src, labels, subject, subjects_dir, **kwargs
+                )
 
-            self._names = step.get_names(self._names)
+                if idx < len(self) - 1:
+                    data = step.fit_transform(data, **step_args)
+                else:
+                    step.fit(data, **step_args)
+
+                if consider_cache:
+                    step_cache.store_fitted_step(step_key, step)
+
+                self._names = step.get_names(self._names)
         self.prepared = True
 
         return self
@@ -210,3 +232,72 @@ class ExtractionPipeline:
             )
 
         return filters
+
+
+class PipelineSet:
+    def __init__(self, pipelines: list[ExtractionPipeline]) -> None:
+        self.pipelines = pipelines
+        self.fitted_steps: dict[str, PipelineStep] = {}
+        self._history: list[tuple[str, str, str]] = []
+
+    def fit(
+        self,
+        data: mne.io.BaseRaw,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> "PipelineSet":
+        for pipeline in self.pipelines:
+            pipeline.fit(
+                data=data,
+                src=src,
+                labels=labels,
+                subject=subject,
+                subjects_dir=subjects_dir,
+                step_cache=self,
+                **kwargs,
+            )
+        return self
+
+    def get_fitted_step(self, step_key: str) -> PipelineStep | None:
+        """
+        Retrieve a fitted step from the cache based on its key.
+
+        Parameters
+        ----------
+        step_key : str
+            The key representing the fitted step.
+
+        Returns
+        -------
+        fitted_step : PipelineStep | None
+            The fitted step corresponding to the provided key, or None if not found.
+        """
+
+        result = self.fitted_steps.get(step_key, None)
+        self._history.append(("GET", step_key, f"{repr(result)} (id={id(result)})"))
+        return result
+
+    def store_fitted_step(self, step_key: str, fitted_step: PipelineStep) -> None:
+        """
+        Store a fitted step in the cache with its corresponding key.
+
+        Parameters
+        ----------
+        step_key : str
+            The key representing the fitted step.
+        fitted_step : PipelineStep
+            The fitted step to be stored in the cache.
+        """
+        self.fitted_steps[step_key] = fitted_step.copy()
+        self._history.append(
+            ("SET", step_key, f"{repr(fitted_step)} (id={id(fitted_step)})")
+        )
+
+    def clear_cache(self) -> None:
+        """
+        Clear the cache of fitted steps if they are no longer needed or relevant.
+        """
+        self.fitted_steps.clear()
