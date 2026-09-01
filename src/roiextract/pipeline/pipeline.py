@@ -99,9 +99,12 @@ class ExtractionPipeline:
         """
         self._names = getattr(data, "ch_names", None)
         consider_cache = step_cache is not None
-        step_key = ""
+        key_parts = []
+
         for idx, step in enumerate(self.steps):
-            step_key = f"{step_key}_{repr(step)}"
+            key_parts.append(repr(step))
+            step_key = "_".join(key_parts)
+
             cached_step = None
             if consider_cache:
                 cached_step = step_cache.get_fitted_step(step_key)
