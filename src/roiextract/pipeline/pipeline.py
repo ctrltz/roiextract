@@ -2,7 +2,6 @@ import mne
 import numpy as np
 import typing as T
 
-
 from roiextract.filter import SpatialFilter
 from roiextract.pipeline.step import PipelineStep
 
@@ -56,6 +55,7 @@ class ExtractionPipeline:
         labels: mne.Label | list[mne.Label],
         subject: str | None = None,
         subjects_dir: str | None = None,
+        step_cache: dict[str, PipelineStep] | None = None,
         **kwargs: T.Any,
     ) -> "ExtractionPipeline":
         """
@@ -78,6 +78,12 @@ class ExtractionPipeline:
             The directory containing the subjects' MRI data. Currently, this argument
             is only used by centroid-based aggregation to compute the center of mass
             of the ROIs.
+        step_cache : dict, optional
+            The cache to store fitted steps. This argument is used to
+            share fitted steps between pipelines, reducing the amount of
+            computation and speeding up the fit for a set of pipelines with
+            common steps. However, caution is required to ensure that the cache
+            contains valid steps that can be re-used. See Notes for details.
         **kwargs
             Additional keyword arguments that may be required for fitting the pipeline.
 
@@ -88,21 +94,50 @@ class ExtractionPipeline:
 
         Notes
         -----
-        Each step in the pipeline receives only a subset of the provided arguments,
-        depending on the specific requirements of the step. Custom steps can request
-        specific arguments by overriding the :meth:`PipelineStep._request_args()`
-        method.
+        Each step in the pipeline receives only a subset of the provided
+        arguments, depending on the specific requirements of the step. Custom
+        steps can request specific arguments by overriding the
+        :meth:`PipelineStep._request_args()` method.
+
+        The caching mechanism is implemented based on the ``__repr__`` values of
+        pipeline steps and accounts only for the order of steps, not the data
+        they are fit to. For example, if a pipeline has steps X, Y, and Z, then
+        the ``f"{repr(X)}_{repr(Y)}_{repr(Z)}"`` key is used to check the cache
+        for a fitted step Z. It is the responsibility of the caller
+        to ensure that the cached step was fit in the matching settings
+        (data, head model, etc.).
         """
         self._names = getattr(data, "ch_names", None)
+        key_parts = []
+
         for idx, step in enumerate(self.steps):
+            key_parts.append(repr(step))
+            step_key = "_".join(key_parts)
+            more_steps_to_come = idx < len(self) - 1
+
+            cached_step = None
+            if step_cache is not None and step_key in step_cache:
+                cached_step = step_cache[step_key]
+
+            if cached_step is not None:
+                self.steps[idx] = cached_step.copy()
+                if more_steps_to_come:
+                    data = cached_step.transform(data)
+                self._names = cached_step.get_names(self._names)
+                continue
+
             step_args = step._request_args(src, labels, subject, subjects_dir, **kwargs)
 
-            if idx < len(self) - 1:
+            if more_steps_to_come:
                 data = step.fit_transform(data, **step_args)
             else:
                 step.fit(data, **step_args)
 
+            if step_cache is not None:
+                step_cache[step_key] = step
+
             self._names = step.get_names(self._names)
+
         self.prepared = True
 
         return self
@@ -135,6 +170,7 @@ class ExtractionPipeline:
         labels: mne.Label | list[mne.Label],
         subject: str | None = None,
         subjects_dir: str | None = None,
+        step_cache: dict[str, PipelineStep] | None = None,
         **kwargs: T.Any,
     ) -> T.Any:
         """
@@ -143,7 +179,13 @@ class ExtractionPipeline:
         respectively.
         """
         self.fit(
-            data, src, labels, subject=subject, subjects_dir=subjects_dir, **kwargs
+            data,
+            src,
+            labels,
+            subject=subject,
+            subjects_dir=subjects_dir,
+            step_cache=step_cache,
+            **kwargs,
         )
         return self.transform(data)
 
@@ -210,3 +252,109 @@ class ExtractionPipeline:
             )
 
         return filters
+
+
+class PipelineSet:
+    """
+    Convenience wrapper for fitting a set of pipelines to the same data.
+
+    .. note::
+
+        This class caches the fitted pipeline steps to reduce the amount
+        of computation when multiple pipelines with common steps are fitted.
+        However, the cache mechanism does not track the data or head model
+        that are used to fit the steps, so it is user's responsibility to
+        clear cache whenever it becomes invalid (e.g., when switching to the
+        data of another participant).
+
+    Parameters
+    ----------
+    pipelines : list of ExtractionPipeline
+        The set of pipelines.
+
+    Attributes
+    ----------
+    fitted_steps : dict
+        Cached fitted steps that are reused across the pipeline set.
+    """
+
+    def __init__(self, pipelines: list[ExtractionPipeline]) -> None:
+        self.pipelines = pipelines
+        self.fitted_steps: dict[str, PipelineStep] = {}
+
+    @property
+    def size(self) -> int:
+        """
+        The size of the pipeline set.
+
+        Returns
+        -------
+        size: int
+            The number of pipelines in the set.
+        """
+        return len(self.pipelines)
+
+    def fit(
+        self,
+        data: mne.io.BaseRaw,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> "PipelineSet":
+        """
+        Fit the set of pipelines to the data. For the parameters and
+        return values, see :meth:`ExtractionPipeline.fit()`.
+        """
+        for pipeline in self.pipelines:
+            pipeline.fit(
+                data=data,
+                src=src,
+                labels=labels,
+                subject=subject,
+                subjects_dir=subjects_dir,
+                step_cache=self.fitted_steps,
+                **kwargs,
+            )
+        return self
+
+    def transform(self, data: mne.io.BaseRaw) -> T.Iterator[np.ndarray]:
+        """
+        Transform the data using the set of pipelines.
+
+        Parameters
+        ----------
+        data : Raw
+            The raw data to transform.
+
+        Returns
+        -------
+        transformed: Iterator
+            Iterator over arrays with transformed data for each pipeline.
+        """
+        for pipeline in self.pipelines:
+            yield pipeline.transform(data)
+
+    def fit_transform(
+        self,
+        data: mne.io.BaseRaw,
+        src: mne.SourceSpaces,
+        labels: mne.Label | list[mne.Label],
+        subject: str | None = None,
+        subjects_dir: str | None = None,
+        **kwargs: T.Any,
+    ) -> T.Iterator[np.ndarray]:
+        """
+        Fit the pipeline set to the provided data and then apply the
+        transformations. For the parameters and return values,
+        see :meth:`fit()` and :meth:`transform()`, respectively.
+        """
+        self.fit(data, src, labels, subject, subjects_dir, **kwargs)
+        yield from self.transform(data)
+
+    def clear_cache(self) -> None:
+        """
+        Clear the cache of fitted steps if they are no longer needed or relevant.
+        """
+        self.fitted_steps.clear()

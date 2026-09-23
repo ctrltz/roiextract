@@ -8,12 +8,13 @@ from roiextract.pipeline.roi_aggregation import (
     SVDAggregation,
 )
 
-from roiextract.pipeline.pipeline import ExtractionPipeline
+from roiextract.pipeline.pipeline import ExtractionPipeline, PipelineSet
 
 
 __all__ = [
     "PipelineStep",
     "ExtractionPipeline",
+    "PipelineSet",
     "Inverse",
     "LCMVBeamformer",
     "MeanAggregation",
