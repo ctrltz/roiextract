@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from roiextract.pipeline import ExtractionPipeline, PipelineStep, PipelineSet
+from roiextract.pipeline import ExtractionPipeline, PipelineSet, PipelineStep
 
 
 def test_extraction_pipeline_no_steps():

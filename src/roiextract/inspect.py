@@ -1,7 +1,7 @@
+from copy import deepcopy
+
 import adaptive
 import numpy as np
-
-from copy import deepcopy
 
 from roiextract.optimize import ctf_optimize_label
 from roiextract.utils import _check_input, logger, normalize_values

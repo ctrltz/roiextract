@@ -1,5 +1,4 @@
 import numpy as np
-
 from numpy.linalg import norm
 from scipy.linalg import eig
 

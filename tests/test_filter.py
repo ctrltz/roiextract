@@ -1,16 +1,16 @@
-import numpy as np
-import mne
-import pytest
 import warnings
+from unittest.mock import patch
 
-from mock import patch
+import mne
+import numpy as np
+import pytest
 
 from roiextract.filter import SpatialFilter, apply_batch, apply_batch_raw, dot
 
 
 def create_dummy_info(n_chans):
     return mne.create_info(
-        [f"Ch{i+1}" for i in range(n_chans)], sfreq=1, ch_types="eeg"
+        [f"Ch{i + 1}" for i in range(n_chans)], sfreq=1, ch_types="eeg"
     )
 
 
@@ -119,7 +119,6 @@ def test_spatialfilter_apply_with_alignment():
     "mode,normalize,expected",
     [
         ["amplitude", None, [-3, 4]],
-        ["power", None, [9, 16]],
         ["amplitude", "norm", [-0.6, 0.8]],
         ["amplitude", "max", [-0.75, 1]],
         ["power", None, [9, 16]],

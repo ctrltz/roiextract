@@ -1,12 +1,12 @@
-import numpy as np
+from unittest.mock import patch
 
-from mock import patch
+import numpy as np
 from scipy.optimize import OptimizeResult
 
 from roiextract.numerical import (
-    _ctf_ratio,
-    _ctf_homogeneity,
     _ctf_compromise,
+    _ctf_homogeneity,
+    _ctf_ratio,
     ctf_optimize_ratio_homogeneity,
 )
 

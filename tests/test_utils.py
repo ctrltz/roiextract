@@ -1,8 +1,8 @@
-import numpy as np
-import mne
-import pytest
+from unittest.mock import patch
 
-from mock import patch
+import mne
+import numpy as np
+import pytest
 
 from roiextract.utils import (
     _check_input,

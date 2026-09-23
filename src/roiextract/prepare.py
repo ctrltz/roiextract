@@ -1,11 +1,10 @@
 import mne
 import numpy as np
-
 from mne._fiff.constants import FIFF
 from mne.label import label_sign_flip
 
 from roiextract.filter import SpatialFilter
-from roiextract.utils import get_label_mask, _check_input
+from roiextract.utils import _check_input, get_label_mask
 
 
 def prepare_filter(sf):

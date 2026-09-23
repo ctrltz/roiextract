@@ -1,14 +1,14 @@
+from unittest.mock import MagicMock
+
 import mne
 import numpy as np
 import pytest
 
-from unittest.mock import MagicMock
-
 from roiextract.pipeline.inverse import Inverse
 from roiextract.pipeline.roi_aggregation import (
-    SVDAggregation,
-    MeanAggregation,
     CentroidAggregation,
+    MeanAggregation,
+    SVDAggregation,
 )
 from roiextract.utils import get_label_mask
 
@@ -36,9 +36,9 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
 
     # Check the metadata
     assert ("Flip" in repr(agg_step)) == flip
-    assert agg_step.get_names(None) == [
-        label.name for label in labels_to_use
-    ], "Row names do not match label names"
+    assert agg_step.get_names(None) == [label.name for label in labels_to_use], (
+        "Row names do not match label names"
+    )
     assert agg_step.get_params()["flip"] == flip
 
     for i, label in enumerate(labels_to_use):
@@ -90,9 +90,9 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
     assert np.allclose(label_tc, extracted, atol=1e-9)
 
     # Check the metadata
-    assert agg_step.get_names(None) == [
-        label.name for label in labels_to_use
-    ], "Row names do not match label names"
+    assert agg_step.get_names(None) == [label.name for label in labels_to_use], (
+        "Row names do not match label names"
+    )
     assert agg_step.get_params()["surf"] == "custom"
 
 
@@ -116,14 +116,14 @@ def test_svd_aggregation__one_component(default_eeg_setup, n_labels):
         tc_mne /= np.linalg.norm(tc_mne)
         tc_agg /= np.linalg.norm(tc_agg)
         dp = np.dot(tc_mne, tc_agg)
-        assert np.isclose(
-            abs(dp), 1.0, atol=1e-9
-        ), "Mismatch between MNE-Python and SVDAggregation results"
+        assert np.isclose(abs(dp), 1.0, atol=1e-9), (
+            "Mismatch between MNE-Python and SVDAggregation results"
+        )
 
     # Check the metadata
-    assert agg_step.get_names(None) == [
-        label.name for label in labels_to_use
-    ], "Row names do not match label names"
+    assert agg_step.get_names(None) == [label.name for label in labels_to_use], (
+        "Row names do not match label names"
+    )
 
 
 def test_svd_aggregation__multiple_components(default_eeg_setup):
@@ -139,7 +139,7 @@ def test_svd_aggregation__multiple_components(default_eeg_setup):
     assert label_tc.shape == (3, raw_eeg.times.size)
 
     # Check the metadata
-    expected_names = [f"{label_to_use.name} (SVD{i+1})" for i in range(3)]
-    assert (
-        agg_step.get_names(None) == expected_names
-    ), "Row names do not match expected SVD component names"
+    expected_names = [f"{label_to_use.name} (SVD{i + 1})" for i in range(3)]
+    assert agg_step.get_names(None) == expected_names, (
+        "Row names do not match expected SVD component names"
+    )

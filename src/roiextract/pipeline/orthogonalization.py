@@ -1,8 +1,11 @@
 import logging
-import numpy as np
 import typing as T
 
+import numpy as np
+
 from roiextract.pipeline import PipelineStep
+
+logger = logging.getLogger(__name__)
 
 
 class RankDeficiencyError(Exception):
@@ -10,8 +13,6 @@ class RankDeficiencyError(Exception):
     Raised when the input data is rank deficient, which leads to noise in the
     orthogonalized components.
     """
-
-    pass
 
 
 class SymmetricOrthogonalization(PipelineStep):
@@ -211,13 +212,13 @@ def _get_symmetric_orthogonalization_weights(
 
         err = np.linalg.norm(Z - O_ * d[:, np.newaxis], "fro") ** 2 / power
         delta = 0 if err == 0 else (last_err - err) / err
-        logging.debug(f"    {ii:2d}: ε={delta:0.2e} ({err})")
+        logger.debug(f"    {ii:2d}: ε={delta:0.2e} ({err})")
         if err == 0 or delta < tol:
-            logging.info(f"Convergence reached on iteration {ii}")
+            logger.info(f"Convergence reached on iteration {ii}")
             break
         last_err = err
     else:
-        logging.warning("Symmetric orth did not converge")
+        logger.warning("Symmetric orth did not converge")
 
     if use_previous_d:
         # sigma and Vh are calculated with D_prev and can be re-used

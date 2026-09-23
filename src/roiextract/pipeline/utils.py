@@ -1,8 +1,7 @@
 import mne
 import numpy as np
-
-from mne.beamformer import apply_lcmv, Beamformer
-from mne.minimum_norm import apply_inverse, InverseOperator
+from mne.beamformer import Beamformer, apply_lcmv
+from mne.minimum_norm import InverseOperator, apply_inverse
 
 
 def _prepare_identity_evoked(ch_names: list[str], ch_types: list[str]) -> mne.Evoked:

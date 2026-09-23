@@ -1,15 +1,15 @@
+from unittest.mock import patch
+
 import numpy as np
 import pytest
-
 from mne_connectivity import symmetric_orth
-from unittest.mock import patch
 
 from roiextract.pipeline import Inverse, MeanAggregation
 from roiextract.pipeline.orthogonalization import (
-    _get_symmetric_orthogonalization_weights,
-    _check_rank_deficiency,
     RankDeficiencyError,
     SymmetricOrthogonalization,
+    _check_rank_deficiency,
+    _get_symmetric_orthogonalization_weights,
 )
 
 
@@ -37,9 +37,9 @@ def test_get_symmetric_orthogonalization_weights(default_eeg_setup):
     mne_tc = symmetric_orth(label_tc, n_iter=n_iter, tol=tol)
 
     # Both time courses have values on the order of 1e-9, so decreasing atol
-    assert np.allclose(
-        orth_tc, mne_tc, atol=1e-13
-    ), "Symmetric orthogonalization does not match MNE implementation"
+    assert np.allclose(orth_tc, mne_tc, atol=1e-13), (
+        "Symmetric orthogonalization does not match MNE implementation"
+    )
 
 
 def test_check_rank_deficiency():
@@ -77,9 +77,9 @@ def test_symmetric_orthogonalization__metadata(mock_get_weights, default_eeg_set
     mock_get_weights.assert_called_once_with(
         label_tc, n_iter=n_iter, tol=tol, use_previous_d=False
     )
-    assert np.allclose(
-        orth_step.get_weights(), np.eye(3)
-    ), "Weights do not match expected identity matrix"
+    assert np.allclose(orth_step.get_weights(), np.eye(3)), (
+        "Weights do not match expected identity matrix"
+    )
 
     assert orth_step.get_params() == {
         "n_iter": n_iter,
@@ -88,6 +88,6 @@ def test_symmetric_orthogonalization__metadata(mock_get_weights, default_eeg_set
     }, "Metadata parameters do not match expected values"
 
     prev_names = ["A", "B", "C"]
-    assert (
-        orth_step.get_names(prev_names) == prev_names
-    ), "Names do not match expected values"
+    assert orth_step.get_names(prev_names) == prev_names, (
+        "Names do not match expected values"
+    )

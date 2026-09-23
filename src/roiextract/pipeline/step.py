@@ -1,6 +1,7 @@
 import copy
-import mne
 import typing as T
+
+import mne
 
 
 class PipelineStep:

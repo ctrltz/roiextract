@@ -1,24 +1,21 @@
-from roiextract.pipeline.step import PipelineStep
-
 from roiextract.pipeline.inverse import Inverse, LCMVBeamformer
 from roiextract.pipeline.orthogonalization import SymmetricOrthogonalization
+from roiextract.pipeline.pipeline import ExtractionPipeline, PipelineSet
 from roiextract.pipeline.roi_aggregation import (
-    MeanAggregation,
     CentroidAggregation,
+    MeanAggregation,
     SVDAggregation,
 )
-
-from roiextract.pipeline.pipeline import ExtractionPipeline, PipelineSet
-
+from roiextract.pipeline.step import PipelineStep
 
 __all__ = [
-    "PipelineStep",
+    "CentroidAggregation",
     "ExtractionPipeline",
-    "PipelineSet",
     "Inverse",
     "LCMVBeamformer",
     "MeanAggregation",
-    "CentroidAggregation",
+    "PipelineSet",
+    "PipelineStep",
     "SVDAggregation",
     "SymmetricOrthogonalization",
 ]

@@ -1,7 +1,7 @@
-import mne
 import os
-import pytest
 
+import mne
+import pytest
 from mne.datasets import sample
 
 

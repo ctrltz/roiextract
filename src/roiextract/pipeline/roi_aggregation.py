@@ -1,12 +1,14 @@
 import logging
-import mne
-import numpy as np
 import typing as T
 
+import mne
+import numpy as np
 from scipy import sparse
 
 from roiextract.pipeline.step import PipelineStep
 from roiextract.utils import get_label_mask, vertno_to_index
+
+logger = logging.getLogger(__name__)
 
 
 class MeanAggregation(PipelineStep):
@@ -237,7 +239,7 @@ class CentroidAggregation(PipelineStep):
         self._indices = np.zeros(n_labels, dtype=int)
 
         if subject is None:
-            logging.warning(
+            logger.warning(
                 "Subject name is not provided explicitly, "
                 "attempting to infer from source space."
             )
@@ -410,7 +412,7 @@ class SVDAggregation(PipelineStep):
         n_labels = len(self.labels)
         self.src = src
 
-        n_sources, n_samples = data.shape
+        n_sources, _ = data.shape
         weights = sparse.lil_matrix((n_labels * self.n_components, n_sources))
         self._names = [""] * (n_labels * self.n_components)
 
@@ -427,7 +429,7 @@ class SVDAggregation(PipelineStep):
                 self._names[start_idx] = label.name
             else:
                 self._names[start_idx:end_idx] = [
-                    f"{label.name} (SVD{i+1})" for i in range(self.n_components)
+                    f"{label.name} (SVD{i + 1})" for i in range(self.n_components)
                 ]
 
         self._weights = weights.tocsr()

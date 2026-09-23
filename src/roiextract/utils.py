@@ -1,9 +1,8 @@
 import logging
-import numpy as np
+
 import mne
-
+import numpy as np
 from mne.label import label_sign_flip
-
 
 logger = logging.getLogger("roiextract")
 
@@ -45,7 +44,7 @@ def get_label_mask(
         labels_to_process = [label.lh, label.rh]
 
     mask = np.zeros((sum(nvert),), dtype=int)
-    for label in labels_to_process:
+    for label in labels_to_process:  # noqa: PLR1704
         if label.hemi == "lh":
             this_vertices = np.intersect1d(vertno[0], label.vertices)
             vert = np.searchsorted(vertno[0], this_vertices)

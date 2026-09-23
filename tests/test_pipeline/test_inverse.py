@@ -39,9 +39,9 @@ def test_inverse_across_lambdas(default_eeg_setup, lambda2):
     data = raw_eeg.get_data()
     extracted = weights @ data
 
-    assert np.allclose(
-        stc.data, extracted, atol=1e-9
-    ), f"Mismatch for lambda2={lambda2}"
+    assert np.allclose(stc.data, extracted, atol=1e-9), (
+        f"Mismatch for lambda2={lambda2}"
+    )
 
     # Check the metadata
     assert inv_step.get_params()["method"] == "sLORETA"

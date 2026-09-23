@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 
 from roiextract.quantify import (
-    ctf_ratio,
-    ctf_similarity,
     ctf_homogeneity,
     ctf_quantify,
+    ctf_ratio,
+    ctf_similarity,
 )
 
 

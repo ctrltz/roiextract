@@ -7,10 +7,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import datetime
-import roiextract
 
 from intersphinx_registry import get_intersphinx_mapping
 
+import roiextract
 
 year = datetime.datetime.now().year
 project = "ROIextract"

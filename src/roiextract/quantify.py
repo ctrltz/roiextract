@@ -1,8 +1,7 @@
 import numpy as np
-
 from numpy.linalg import norm
 
-from .utils import resolve_template, get_label_mask
+from .utils import get_label_mask, resolve_template
 
 
 def ctf_ratio(w, L, mask, source_mask=None):

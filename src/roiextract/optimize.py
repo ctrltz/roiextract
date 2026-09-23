@@ -1,21 +1,21 @@
+from functools import partial
+
 import mne
 import numpy as np
 
-from functools import partial
+from roiextract.prepare import prepare_label_mask, prepare_leadfield
 
 from .analytic import _ctf_optimize_ratio, ctf_optimize_ratio_similarity
 from .filter import SpatialFilter
 from .numerical import ctf_optimize_ratio_homogeneity
-from roiextract.prepare import prepare_leadfield, prepare_label_mask
 from .quantify import ctf_quantify
 from .utils import (
-    get_label_mask,
-    resolve_template,
     _check_input,
     _report_props,
+    get_label_mask,
     logger,
+    resolve_template,
 )
-
 
 INITIAL_LAMBDAS = {"rat": 0, "sim": 0.999, "hom": 0.999}
 IS_DECREASING = {"rat": True, "sim": False, "hom": False}

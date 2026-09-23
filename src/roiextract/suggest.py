@@ -1,12 +1,12 @@
-import adaptive
-import numpy as np
-
 from copy import deepcopy
 from functools import partial
 
+import adaptive
+import numpy as np
+
+from roiextract._sample import sample_criterion
 from roiextract.inspect import OptimizationCurve
 from roiextract.utils import _check_input, normalize_values
-from roiextract._sample import sample_criterion
 
 
 def theta(sims, rats, limits):

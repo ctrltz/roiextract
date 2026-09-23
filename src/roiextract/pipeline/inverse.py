@@ -1,19 +1,19 @@
-import mne
-import numpy as np
 import typing as T
 
+import mne
+import numpy as np
 from mne._fiff.constants import FIFF
-from mne.beamformer import make_lcmv, apply_lcmv_raw, Beamformer
+from mne.beamformer import Beamformer, apply_lcmv_raw, make_lcmv
 from mne.minimum_norm import (
-    apply_inverse_raw,
     InverseOperator,
+    apply_inverse_raw,
     prepare_inverse_operator,
 )
 
 from roiextract.pipeline.step import PipelineStep
 from roiextract.pipeline.utils import (
-    _get_matrix_from_prepared_inverse_operator,
     _get_matrix_from_lcmv_filters,
+    _get_matrix_from_prepared_inverse_operator,
 )
 
 
@@ -71,7 +71,7 @@ class Inverse(PipelineStep):
             The fitted inverse operator.
         """
         if not isinstance(data, mne.io.BaseRaw):
-            raise ValueError("Only mne.io.Raw objects are supported")
+            raise TypeError("Only mne.io.Raw objects are supported")
 
         self.apply_fun = apply_inverse_raw
         self._inv_prepared = prepare_inverse_operator(
@@ -236,7 +236,7 @@ class LCMVBeamformer(PipelineStep):
             The fitted LCMV beamformer.
         """
         if not isinstance(data, mne.io.BaseRaw):
-            raise ValueError("Only mne.io.Raw objects are supported")
+            raise TypeError("Only mne.io.Raw objects are supported")
 
         if data_cov is None:
             data_cov = mne.compute_raw_covariance(data, tstep=self.cov_tstep)

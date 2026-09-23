@@ -1,6 +1,7 @@
+import typing as T
+
 import mne
 import numpy as np
-import typing as T
 
 from roiextract.filter import SpatialFilter
 from roiextract.pipeline.step import PipelineStep

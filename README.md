@@ -39,7 +39,7 @@ sf = ctf_optimize_label(fwd, label, template, lambda_)
 
 sf, props = ctf_optimize_label(fwd, label, template, lambda_, quantify=True)
 
-sf = ctf_optimize_label(fwd, label, template, lambda_='auto', threshold=0.95)
+sf = ctf_optimize_label(fwd, label, template, lambda_="auto", threshold=0.95)
 ```
 
 Plot the filter as a topomap:
