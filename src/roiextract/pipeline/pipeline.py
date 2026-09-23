@@ -108,7 +108,6 @@ class ExtractionPipeline:
         (data, head model, etc.).
         """
         self._names = getattr(data, "ch_names", None)
-        consider_cache = step_cache is not None
         key_parts = []
 
         for idx, step in enumerate(self.steps):
@@ -117,7 +116,7 @@ class ExtractionPipeline:
             more_steps_to_come = idx < len(self) - 1
 
             cached_step = None
-            if consider_cache and step_key in step_cache:
+            if step_cache is not None and step_key in step_cache:
                 cached_step = step_cache[step_key]
 
             if cached_step is not None:
@@ -134,7 +133,7 @@ class ExtractionPipeline:
             else:
                 step.fit(data, **step_args)
 
-            if consider_cache:
+            if step_cache is not None:
                 step_cache[step_key] = step
 
             self._names = step.get_names(self._names)
