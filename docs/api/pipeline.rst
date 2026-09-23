@@ -11,6 +11,7 @@ General
 
    PipelineStep
    ExtractionPipeline
+   PipelineSet
 
 
 Source reconstruction
