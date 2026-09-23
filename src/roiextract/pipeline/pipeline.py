@@ -82,7 +82,7 @@ class ExtractionPipeline:
             The cache to store fitted steps. This argument is used to
             share fitted steps between pipelines, reducing the amount of
             computation and speeding up the fit for a set of pipelines with
-            common steps. However, caution is required to ensure that cache
+            common steps. However, caution is required to ensure that the cache
             contains valid steps that can be re-used. See Notes for details.
         **kwargs
             Additional keyword arguments that may be required for fitting the pipeline.
@@ -99,7 +99,7 @@ class ExtractionPipeline:
         steps can request specific arguments by overriding the
         :meth:`PipelineStep._request_args()` method.
 
-        Caching mechanism is implemented based on the ``__repr__`` values of
+        The caching mechanism is implemented based on the ``__repr__`` values of
         pipeline steps and accounts only for the order of steps, not the data
         they are fit to. For example, if a pipeline has steps X, Y, and Z, then
         the ``f"{repr(X)}_{repr(Y)}_{repr(Z)}"`` key is used to check the cache
