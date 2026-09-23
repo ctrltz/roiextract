@@ -114,6 +114,7 @@ class ExtractionPipeline:
         for idx, step in enumerate(self.steps):
             key_parts.append(repr(step))
             step_key = "_".join(key_parts)
+            more_steps_to_come = idx < len(self) - 1
 
             cached_step = None
             if consider_cache and step_key in step_cache:
@@ -121,22 +122,23 @@ class ExtractionPipeline:
 
             if cached_step is not None:
                 self.steps[idx] = cached_step.copy()
-                data = cached_step.transform(data)
+                if more_steps_to_come:
+                    data = cached_step.transform(data)
                 self._names = cached_step.get_names(self._names)
+                continue
+
+            step_args = step._request_args(src, labels, subject, subjects_dir, **kwargs)
+
+            if more_steps_to_come:
+                data = step.fit_transform(data, **step_args)
             else:
-                step_args = step._request_args(
-                    src, labels, subject, subjects_dir, **kwargs
-                )
+                step.fit(data, **step_args)
 
-                if idx < len(self) - 1:
-                    data = step.fit_transform(data, **step_args)
-                else:
-                    step.fit(data, **step_args)
+            if consider_cache:
+                step_cache[step_key] = step
 
-                if consider_cache:
-                    step_cache[step_key] = step
+            self._names = step.get_names(self._names)
 
-                self._names = step.get_names(self._names)
         self.prepared = True
 
         return self

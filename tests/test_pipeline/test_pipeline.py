@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from roiextract.pipeline import ExtractionPipeline, PipelineStep
+from roiextract.pipeline import ExtractionPipeline, PipelineStep, PipelineSet
 
 
 def test_extraction_pipeline_no_steps():
@@ -114,6 +114,41 @@ def test_extraction_pipeline_fit():
     assert pipeline.prepared
 
 
+def test_extraction_pipeline_fit_fills_cache():
+    step1 = Step1()
+    step2 = Step2(raise_error_on_transform=True)
+    step_cache = {}
+    pipeline = ExtractionPipeline(steps=[step1, step2])
+
+    pipeline.fit(data=1, src=None, labels=None, step_cache=step_cache)
+
+    expected = {"Step1": Step1, "Step1_Step2": Step2}
+    for key, expected_type in expected.items():
+        assert key in step_cache
+        assert isinstance(step_cache[key], expected_type)
+        assert step_cache[key].prepared
+
+
+def test_extraction_pipeline_fit_uses_cache():
+    step1 = Step1()
+    step2 = Step2(raise_error_on_transform=True)
+    step1_copy = Step1()
+    step2_copy = Step2()
+    step_cache = {}
+    pipeline1 = ExtractionPipeline(steps=[step1, step2])
+    pipeline2 = ExtractionPipeline(steps=[step1_copy, step2_copy])
+
+    # Fills the cache
+    pipeline1.fit(data=1, src=None, labels=None, step_cache=step_cache)
+
+    # Should reuse the cache
+    pipeline2.fit(data=1, src=None, labels=None, step_cache=step_cache)
+
+    # No need to fit copies of steps when cached versions are available
+    assert not step1_copy.prepared
+    assert not step2_copy.prepared
+
+
 def test_extraction_pipeline_fit_transform():
     pipeline = ExtractionPipeline(steps=[Step1(), Step2()])
     pipeline.fit(data=1, src=None, labels=None)
@@ -162,3 +197,38 @@ def test_extraction_pipeline_check_if_prepared():
 
     with pytest.raises(RuntimeError):
         pipeline.get_filters()
+
+
+def test_pipeline_set_size():
+    step1 = Step1()
+    step2 = Step2(raise_error_on_transform=True)
+    pipeline1 = ExtractionPipeline(steps=[step1])
+    pipeline2 = ExtractionPipeline(steps=[step1, step2])
+    pipeline_set = PipelineSet([pipeline1, pipeline2])
+    assert pipeline_set.size == 2
+
+
+def test_pipeline_set_fit():
+    step1 = Step1()
+    step2 = Step2(raise_error_on_transform=True)
+    pipeline1 = ExtractionPipeline(steps=[step1])
+    pipeline2 = ExtractionPipeline(steps=[step1, step2])
+    pipeline_set = PipelineSet([pipeline1, pipeline2])
+
+    pipeline_set.fit(data=1, src=None, labels=None)
+    for p in pipeline_set.pipelines:
+        assert p.prepared
+
+
+def test_pipeline_set_clear_cache():
+    step1 = Step1()
+    step2 = Step2(raise_error_on_transform=True)
+    pipeline1 = ExtractionPipeline(steps=[step1])
+    pipeline2 = ExtractionPipeline(steps=[step1, step2])
+    pipeline_set = PipelineSet([pipeline1, pipeline2])
+
+    pipeline_set.fit(data=1, src=None, labels=None)
+    assert len(pipeline_set.fitted_steps)
+
+    pipeline_set.clear_cache()
+    assert not pipeline_set.fitted_steps
