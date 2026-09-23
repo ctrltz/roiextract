@@ -101,10 +101,10 @@ class ExtractionPipeline:
 
         Caching mechanism is implemented based on the ``__repr__`` values of
         pipeline steps and accounts only for the order of steps, not the data
-        they are fit to. For example, if pipeline has steps X, Y, and Z, then
-        ``f"{repr(X)}_{repr(Y)}_{repr(Z)}"`` key is used to check the cache
-        for a fitted step Z. It is is the responsibility of the caller
-        to ensure that the cached step was fit in the matching subjects
+        they are fit to. For example, if a pipeline has steps X, Y, and Z, then
+        the ``f"{repr(X)}_{repr(Y)}_{repr(Z)}"`` key is used to check the cache
+        for a fitted step Z. It is the responsibility of the caller
+        to ensure that the cached step was fit in the matching settings
         (data, head model, etc.).
         """
         self._names = getattr(data, "ch_names", None)
