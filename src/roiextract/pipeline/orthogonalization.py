@@ -3,7 +3,7 @@ import typing as T
 
 import numpy as np
 
-from roiextract.pipeline import PipelineStep
+from roiextract.pipeline.step import PipelineStep
 
 logger = logging.getLogger(__name__)
 
