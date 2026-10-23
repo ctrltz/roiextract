@@ -129,9 +129,6 @@ class Inverse(PipelineStep):
             The weight matrix of the inverse operator.
         """
         self._check_if_prepared()
-        if self._weights is None:
-            raise RuntimeError("The weights are not set. Call fit() first.")
-
         return self._weights
 
     def get_params(self) -> dict[str, T.Any]:
