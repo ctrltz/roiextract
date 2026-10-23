@@ -3,10 +3,9 @@ import typing as T
 import mne
 import numpy as np
 from mne._fiff.constants import FIFF
-from mne.beamformer import Beamformer, apply_lcmv_raw, make_lcmv
+from mne.beamformer import Beamformer, make_lcmv
 from mne.minimum_norm import (
     InverseOperator,
-    apply_inverse_raw,
     prepare_inverse_operator,
 )
 
@@ -51,7 +50,6 @@ class Inverse(PipelineStep):
         self.method: str = method
         self.lambda2: float = lambda2
         self.nave: int = nave
-        self.apply_fun: T.Callable | None = None
 
     def __repr__(self) -> str:
         return f"Inverse<{self.method}>"
@@ -73,7 +71,6 @@ class Inverse(PipelineStep):
         if not isinstance(data, mne.io.BaseRaw):
             raise TypeError("Only mne.io.Raw objects are supported")
 
-        self.apply_fun = apply_inverse_raw
         self._inv_prepared = prepare_inverse_operator(
             orig=self._inv_orig,
             nave=self.nave,
@@ -102,16 +99,10 @@ class Inverse(PipelineStep):
             The source estimate obtained by applying the inverse operator.
         """
         self._check_if_prepared()
-        if self.apply_fun is None:
-            raise RuntimeError("The apply function has not been set. Call fit() first.")
+        if self._weights is None:
+            raise RuntimeError("The weights are not set. Call fit() first.")
 
-        return self.apply_fun(
-            data,
-            self._inv_prepared,
-            method=self.method,
-            lambda2=self.lambda2,
-            prepared=True,
-        )
+        return self._weights @ data.get_data()
 
     def fit_transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:  # type: ignore[override]
         """
@@ -184,7 +175,6 @@ class LCMVBeamformer(PipelineStep):
 
         self.filters: Beamformer | None = None
         self._weights: np.ndarray | None = None
-        self.apply_fun: T.Callable | None = None
 
     def __repr__(self) -> str:
         return "LCMVBeamformer"
@@ -244,7 +234,6 @@ class LCMVBeamformer(PipelineStep):
         if noise_cov is None:
             noise_cov = mne.make_ad_hoc_cov(data.info, std=1.0)
 
-        self.apply_fun = apply_lcmv_raw
         self.filters = make_lcmv(
             info=data.info,
             forward=self.fwd,
@@ -272,9 +261,10 @@ class LCMVBeamformer(PipelineStep):
             The source estimate obtained by applying the LCMV beamformer.
         """
         self._check_if_prepared()
-        assert self.apply_fun is not None
-        assert self.filters is not None
-        return self.apply_fun(data, self.filters)
+        if self._weights is None:
+            raise RuntimeError("The weights are not set. Call fit() first.")
+
+        return self._weights @ data.get_data()
 
     def fit_transform(  # type: ignore[override]
         self,
