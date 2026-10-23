@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 import mne
 import numpy as np
 import pytest
+from mne.minimum_norm import apply_inverse_raw
 
-from roiextract.pipeline.inverse import Inverse
 from roiextract.pipeline.roi_aggregation import (
     CentroidAggregation,
     MeanAggregation,
@@ -21,18 +21,18 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
     src = fwd["src"]
     labels_to_use = labels[:n_labels]
 
-    inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
-    stc = inv_step.fit_transform(raw_eeg)
+    stc = apply_inverse_raw(raw_eeg, inv_op, method="eLORETA", lambda2=1.0 / 9.0)
 
+    # Apply the method using the extracted weights
     agg_step = MeanAggregation(flip=flip)
-    label_tc = agg_step.fit_transform(stc, src, labels=labels_to_use)
+    label_tc = agg_step.fit_transform(stc.data, src, labels=labels_to_use)
     assert label_tc.shape == (n_labels, raw_eeg.times.size)
-    weights = agg_step.get_weights()
 
-    # Apply the method using the extracted weights and ensure that the result
-    # matches MNE-based computation
-    extracted = weights @ stc.data
-    assert np.allclose(label_tc, extracted, atol=1e-9), f"Mismatch in flip={flip}"
+    # Ensure that the result matches MNE-based computation
+    mne_tc = mne.extract_label_time_course(
+        stc, labels_to_use, src=src, mode="mean_flip" if flip else "mean"
+    )
+    assert np.allclose(label_tc, mne_tc, atol=1e-9), f"Mismatch in flip={flip}"
 
     # Check the metadata
     assert ("Flip" in repr(agg_step)) == flip
@@ -41,6 +41,7 @@ def test_mean_aggregation(default_eeg_setup, flip, n_labels):
     )
     assert agg_step.get_params()["flip"] == flip
 
+    weights = agg_step.get_weights()
     for i, label in enumerate(labels_to_use):
         mask = get_label_mask(label, src)
         assert weights[i, ~mask].nnz == 0, "Non-zero weights outside the label"
@@ -66,11 +67,11 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
         label.center_of_mass = MagicMock(return_value=vertno)
         mocks.append(label.center_of_mass)
 
-    inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
-    stc = inv_step.fit_transform(raw_eeg)
+    stc = apply_inverse_raw(raw_eeg, inv_op, method="eLORETA", lambda2=1.0 / 9.0)
 
+    # Apply the method
     agg_step = CentroidAggregation(surf="custom")
-    label_tc = agg_step.fit_transform(stc, src, labels=labels_to_use)
+    label_tc = agg_step.fit_transform(stc.data, src, labels=labels_to_use)
     assert label_tc.shape == (n_labels, raw_eeg.times.size)
     weights = agg_step.get_weights()
 
@@ -84,8 +85,7 @@ def test_centroid_aggregation(default_eeg_setup, n_labels):
     for mock in mocks:
         assert mock.call_args.kwargs["surf"] == "custom"
 
-    # Apply the method using the extracted weights and ensure that the result
-    # matches MNE-based computation
+    # Ensure that the result matches when using indices
     extracted = weights @ stc.data
     assert np.allclose(label_tc, extracted, atol=1e-9)
 
@@ -102,11 +102,10 @@ def test_svd_aggregation__one_component(default_eeg_setup, n_labels):
     src = fwd["src"]
     labels_to_use = labels[:n_labels]
 
-    inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
-    stc = inv_step.fit_transform(raw_eeg)
+    stc = apply_inverse_raw(raw_eeg, inv_op, method="eLORETA", lambda2=1.0 / 9.0)
 
     agg_step = SVDAggregation(n_components=1)
-    label_tc = agg_step.fit_transform(stc, src, labels=labels_to_use)
+    label_tc = agg_step.fit_transform(stc.data, src, labels=labels_to_use)
     assert label_tc.shape == (n_labels, raw_eeg.times.size)
 
     # MNE-Python only allows obtaining the first SVD component, check that
@@ -131,11 +130,10 @@ def test_svd_aggregation__multiple_components(default_eeg_setup):
     src = fwd["src"]
     label_to_use = labels[0]
 
-    inv_step = Inverse(inv_op, method="eLORETA", lambda2=1.0 / 9.0)
-    stc = inv_step.fit_transform(raw_eeg)
+    stc = apply_inverse_raw(raw_eeg, inv_op, method="eLORETA", lambda2=1.0 / 9.0)
 
     agg_step = SVDAggregation(n_components=3)
-    label_tc = agg_step.fit_transform(stc, src, labels=label_to_use)
+    label_tc = agg_step.fit_transform(stc.data, src, labels=label_to_use)
     assert label_tc.shape == (3, raw_eeg.times.size)
 
     # Check the metadata

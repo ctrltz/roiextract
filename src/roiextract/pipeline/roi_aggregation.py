@@ -42,7 +42,7 @@ class MeanAggregation(PipelineStep):
 
     def fit(  # type: ignore[override]
         self,
-        data: mne.SourceEstimate,
+        data: np.ndarray,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
     ) -> "MeanAggregation":
@@ -51,7 +51,7 @@ class MeanAggregation(PipelineStep):
 
         Parameters
         ----------
-        data : SourceEstimate
+        data : array
             The source estimate containing the reconstructed source time courses.
         src : SourceSpaces
             The definition of the considered source space for inverse modeling.
@@ -83,7 +83,7 @@ class MeanAggregation(PipelineStep):
         self.prepared = True
         return self
 
-    def transform(self, data: mne.SourceEstimate) -> np.ndarray:
+    def transform(self, data: np.ndarray) -> np.ndarray:
         """
         Apply the fitted aggregation to the provided data. The applied transformation
         corresponds to the :func:`mne.extract_label_time_course` function
@@ -92,7 +92,7 @@ class MeanAggregation(PipelineStep):
 
         Parameters
         ----------
-        data : SourceEstimate
+        data : array
             The source estimate containing the reconstructed source time courses.
 
         Returns
@@ -101,13 +101,11 @@ class MeanAggregation(PipelineStep):
             The extracted time courses for each label.
         """
         self._check_if_prepared()
-        return mne.extract_label_time_course(
-            data, self.labels, src=self.src, mode="mean_flip" if self.flip else "mean"
-        )
+        return self._weights @ data
 
     def fit_transform(  # type: ignore[override]
         self,
-        data: mne.SourceEstimate,
+        data: np.ndarray,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
     ) -> np.ndarray:
@@ -199,7 +197,7 @@ class CentroidAggregation(PipelineStep):
 
     def fit(  # type: ignore[override]
         self,
-        data: mne.SourceEstimate,
+        data: np.ndarray,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
         subject: str | None = None,
@@ -210,7 +208,7 @@ class CentroidAggregation(PipelineStep):
 
         Parameters
         ----------
-        data : SourceEstimate
+        data : array
             The source estimate containing the reconstructed source time courses.
         src : SourceSpaces
             The definition of the considered source space for inverse modeling.
@@ -262,7 +260,7 @@ class CentroidAggregation(PipelineStep):
         self.prepared = True
         return self
 
-    def transform(self, data: mne.SourceEstimate) -> np.ndarray:
+    def transform(self, data: np.ndarray) -> np.ndarray:
         """
         Apply centroid-based aggregation to the provided data.
 
@@ -277,11 +275,11 @@ class CentroidAggregation(PipelineStep):
             The extracted time courses for each label.
         """
         self._check_if_prepared()
-        return data.data[self._indices, :]
+        return self._weights @ data
 
     def fit_transform(  # type: ignore[override]
         self,
-        data: mne.SourceEstimate,
+        data: np.ndarray,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
         subject: str | None = None,
@@ -369,7 +367,6 @@ class SVDAggregation(PipelineStep):
         self.src: mne.SourceSpaces | None = None
         self._names: list[str] = []
         self._weights: sparse.csr_matrix = sparse.csr_matrix((0, 0))
-        self._tc: np.ndarray = np.array([])
 
     def __repr__(self) -> str:
         return f"SVDAggregation(n_components={self.n_components})"
@@ -386,7 +383,7 @@ class SVDAggregation(PipelineStep):
 
     def fit(  # type: ignore[override]
         self,
-        data: mne.SourceEstimate,
+        data: np.ndarray,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
     ) -> "SVDAggregation":
@@ -395,7 +392,7 @@ class SVDAggregation(PipelineStep):
 
         Parameters
         ----------
-        data : SourceEstimate
+        data : array
             The source estimate containing the reconstructed source time courses.
         src : SourceSpaces
             The definition of the considered source space for inverse modeling.
@@ -418,7 +415,7 @@ class SVDAggregation(PipelineStep):
 
         for i, label in enumerate(self.labels):
             mask = get_label_mask(label, src)
-            label_data = data.data[mask, :]
+            label_data = data[mask, :]
             U, _, _ = np.linalg.svd(label_data, full_matrices=False)
 
             start_idx = i * self.n_components
@@ -436,13 +433,9 @@ class SVDAggregation(PipelineStep):
         self.prepared = True
         return self
 
-    def transform(self, data: mne.SourceEstimate) -> np.ndarray:
+    def transform(self, data: np.ndarray) -> np.ndarray:
         """
-        Apply the fitted SVD aggregation to the provided data. Unlike other
-        built-in aggregation methods, this method does not use MNE-Python's
-        :func:`mne.extract_label_time_course` function, since it only allows
-        extracting the first SVD component. Instead, the method applies the
-        fitted weight matrix to the data to obtain the SVD-based time courses.
+        Apply the fitted SVD aggregation to the provided data.
 
         In case of one SVD component per ROI, the result should match the output
         of :func:`mne.extract_label_time_course` with ``mode="pca_flip"`` up to a
@@ -450,7 +443,7 @@ class SVDAggregation(PipelineStep):
 
         Parameters
         ----------
-        data : SourceEstimate
+        data : array
             The source estimate containing the reconstructed source time courses.
 
         Returns
@@ -461,11 +454,11 @@ class SVDAggregation(PipelineStep):
             located at rows ``i * n_components`` to ``(i + 1) * n_components - 1``.
         """
         self._check_if_prepared()
-        return self._weights @ data.data
+        return self._weights @ data
 
     def fit_transform(  # type: ignore[override]
         self,
-        data: mne.SourceEstimate,
+        data: np.ndarray,
         src: mne.SourceSpaces,
         labels: mne.Label | list[mne.Label],
     ) -> np.ndarray:
@@ -475,7 +468,7 @@ class SVDAggregation(PipelineStep):
 
         Parameters
         ----------
-        data : SourceEstimate
+        data : array
             The source estimate containing the reconstructed source time courses.
         src : SourceSpaces
             The definition of the considered source space for inverse modeling.
