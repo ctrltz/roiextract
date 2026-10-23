@@ -1,7 +1,8 @@
-import numpy as np
-import mne
 import warnings
+from typing import Any, Literal
 
+import mne
+import numpy as np
 from numpy.linalg import norm
 
 from roiextract.utils import (
@@ -15,8 +16,8 @@ class SpatialFilter:
     Convenience wrapper around a NumPy array that contains the weights of
     the spatial filter for each data channel.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     w: array, shape (n_sensors,)
         The weights of the spatial filter.
     method: str, optional
@@ -31,26 +32,26 @@ class SpatialFilter:
 
     def __init__(
         self,
-        w,
-        method="",
-        method_params=dict(),
-        ch_names=None,
-        name="",
+        w: np.ndarray,
+        method: str = "",
+        method_params: dict[str, Any] | None = None,
+        ch_names: list[str] | None = None,
+        name: str = "",
     ) -> None:
         self.w = np.squeeze(np.array(w))
         self.method = method
-        self.method_params = method_params
+        self.method_params = method_params or {}
         self._validate_ch_names(ch_names)
         self.name = name
 
     @property
-    def size(self):
+    def size(self) -> int:
         """
         The number of channels (weights) in the filter.
         """
         return self.w.size
 
-    def _validate_ch_names(self, ch_names):
+    def _validate_ch_names(self, ch_names: list[str] | None) -> None:
         if ch_names is None:
             self.ch_names = None
             return
@@ -85,24 +86,11 @@ class SpatialFilter:
 
         return result
 
-    def _align(self, num_channels, raw_names):
+    def _align(self, num_channels: int, raw_names: list[str] | None) -> np.ndarray:
         """
         Generate a set of indices that align channels in the filter and the
         provided data.
         """
-        has_own_names = self.ch_names is not None
-        has_raw_names = raw_names is not None
-        alignment_possible = has_own_names and has_raw_names
-
-        # Warn if alignment is not possible
-        if not alignment_possible:
-            warnings.warn(
-                "The filter or the provided data object does not contain the "
-                "information about channel names. "
-                "To obtain correct results, please ensure that the order of "
-                "the channels is the same for the filter and the M/EEG data."
-            )
-
         # Check that the number of channels in raw and filter matches
         if num_channels != self.size:
             raise ValueError(
@@ -112,7 +100,13 @@ class SpatialFilter:
             )
 
         # If there is no information to reorder channels, use the original order
-        if not alignment_possible:
+        if self.ch_names is None or raw_names is None:
+            warnings.warn(
+                "The filter or the provided data object does not contain the "
+                "information about channel names. "
+                "To obtain correct results, please ensure that the order of "
+                "the channels is the same for the filter and the M/EEG data."
+            )
             return np.arange(self.size)
 
         # Otherwise, align the order of channels to match the provided data object
@@ -131,7 +125,7 @@ class SpatialFilter:
 
         return mapping
 
-    def apply(self, data, ch_names=None) -> np.ndarray:
+    def apply(self, data: np.ndarray, ch_names: list[str] | None = None) -> np.ndarray:
         """
         Apply the filter to the provided data.
 
@@ -153,7 +147,7 @@ class SpatialFilter:
         reorder = self._align(data.shape[0], ch_names)
         return self.w[np.newaxis, reorder] @ data
 
-    def apply_raw(self, raw) -> np.ndarray:
+    def apply_raw(self, raw: mne.io.BaseRaw) -> np.ndarray:
         """
         Same as :meth:`apply`, but designed
         to be applied directly to a :class:`~mne.io.Raw` dataset.
@@ -180,9 +174,9 @@ class SpatialFilter:
 
     def get_ctf(
         self,
-        leadfield,
-        mode="power",
-        normalize="sum",
+        leadfield: np.ndarray,
+        mode: Literal["power", "amplitude"] = "power",
+        normalize: Literal["sum", "max", "norm"] | None = "sum",
     ) -> np.ndarray:
         """
         Get the cross-talk function (CTF) of the spatial filter.
@@ -238,10 +232,10 @@ class SpatialFilter:
 
     def get_ctf_fwd(
         self,
-        fwd,
-        mode="power",
-        normalize="norm",
-        subject=None,
+        fwd: mne.Forward,
+        mode: Literal["power", "amplitude"] = "power",
+        normalize: Literal["sum", "max", "norm"] | None = "sum",
+        subject: str | None = None,
     ) -> mne.SourceEstimate:
         """
         Get the CTF of the spatial filter as a :class:`~mne.SourceEstimate`
@@ -270,7 +264,7 @@ class SpatialFilter:
         src = fwd["src"]
         return data2stc(self.get_ctf(leadfield, mode, normalize), src, subject=subject)
 
-    def plot(self, info, **topomap_kwargs):
+    def plot(self, info: mne.Info, **topomap_kwargs: Any):
         """
         Plot the spatial filter as a topomap.
 
@@ -304,7 +298,9 @@ class SpatialFilter:
         return mne.viz.plot_topomap(w, info, **topomap_kwargs)
 
 
-def apply_batch(data, filters, ch_names=None) -> np.ndarray:
+def apply_batch(
+    data: np.ndarray, filters: list[SpatialFilter], ch_names: list[str] | None = None
+) -> np.ndarray:
     """
     Apply a set of spatial filters to the provided data.
 
@@ -334,7 +330,7 @@ def apply_batch(data, filters, ch_names=None) -> np.ndarray:
     return w @ data
 
 
-def apply_batch_raw(raw, filters) -> np.ndarray:
+def apply_batch_raw(raw: mne.io.BaseRaw, filters: list[SpatialFilter]) -> np.ndarray:
     """
     Apply of a set of spatial filters to a :class:`~mne.io.Raw` dataset.
 
@@ -360,7 +356,7 @@ def apply_batch_raw(raw, filters) -> np.ndarray:
     return apply_batch(raw.get_data(), filters, raw.ch_names)
 
 
-def dot(sf1, sf2, normalize=True) -> float:
+def dot(sf1: SpatialFilter, sf2: SpatialFilter, normalize: bool = True) -> float:
     """
     Compute the dot product / cosine similarity of two spatial filters.
 

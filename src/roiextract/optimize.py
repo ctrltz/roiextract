@@ -175,7 +175,7 @@ def ctf_optimize_label(
     tol=0.001,
     reg=0.001,
     quantify=False,
-    name=None,
+    name="",
 ):
     # Extract data from Forward and Label
     leadfield = fwd["sol"]["data"]
@@ -214,7 +214,7 @@ def ctf_optimize_ratio(
     reg: float = 0.001,
     return_filter: bool = True,
     ch_names: list[str] | None = None,
-    name: str | None = None,
+    name: str = "",
 ) -> SpatialFilter | np.ndarray:
     """
     Obtain a spatial filter that optimizes the CTF ratio for a given lead
