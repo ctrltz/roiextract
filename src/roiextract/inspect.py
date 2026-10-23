@@ -1,150 +1,109 @@
-from copy import deepcopy
-
 import adaptive
 import numpy as np
 
-from roiextract.optimize import ctf_optimize_label
-from roiextract.utils import _check_input, logger, normalize_values
+from roiextract._sample import AdaptiveMixin, BaseSampler
+from roiextract.suggest import Suggester
+from roiextract.utils import logger, normalize_values
 
 
-class OptimizationCurve:
-    def __init__(self, fwd, label, mode, template, reg=0.001, sampling_limit=0.0001):
-        _check_input("mode", mode, ["homogeneity", "similarity"])
-        self.fwd = fwd
-        self.label = label
-        self.mode = mode
-        self.template = template
-        self.reg = reg
-        self.sampling_limit = sampling_limit
-        self._reset()
+class OptimizationCurve(BaseSampler, AdaptiveMixin):
+    def __init__(
+        self,
+        filter_fun,
+        param,
+        eval_fun,
+        bounds=(1e-5, 1.0 - 1e-5),
+        sampling_limit=0.0001,
+        **kwargs,
+    ):
+        super().__init__(
+            filter_fun=filter_fun,
+            param=param,
+            bounds=bounds,
+            eval_fun=eval_fun,
+            sampling_limit=sampling_limit,
+            **kwargs,
+        )
 
     def _reset(self):
-        self.filters = None
-        self.lambdas = None
-        self.n_points = None
-        self._xs = None
-        self._ys = None
-
-    def copy(self):
-        return deepcopy(self)
+        super()._reset()
+        self.mask = None
 
     @property
-    def homs(self):
-        if self.mode == "similarity":
-            raise ValueError(
-                f"The optimization mode is set to {self.mode}, so the "
-                f"homogeneity values are not available."
-            )
+    def suggester(self):
+        return Suggester(
+            self.filter_fun,
+            self.param,
+            self.eval_fun.copy(),
+            self.bounds,
+            self.sampling_limit,
+            **self.kwargs,
+        )
 
-        return self._xs
-
-    @property
-    def sims(self):
-        if self.mode == "homogeneity":
-            raise ValueError(
-                f"The optimization mode is set to {self.mode}, so the "
-                f"similarity values are not available."
-            )
-
-        return self._xs
-
-    @property
-    def rats(self):
-        return self._ys
-
-    def plot(self, ax, normalize=False):
-        xs, ys = self._xs, self._ys
+    def _get_plot_values(self, x, y, normalize):
+        xs, ys = self.get(x), self.get(y)
         if normalize:
-            xs, ys = normalize_values(xs, ys)
+            return normalize_values(xs, ys)
 
-        ax.plot(xs, ys, "k-")
-        ax.scatter(xs, ys, c=self.lambdas)
-        ax.set_aspect("equal")
-        ax.set_xlim([0, 1])
-        ax.set_ylim([0, 1])
-        ax.set_xlabel(f"CTF {self.mode}")
-        ax.set_ylabel("CTF Ratio")
+        return xs, ys
 
-    def sample_adaptive(self, dist_threshold):
-        self._reset()
-        self.filters = []
+    def plot(self, x, y, ax, normalize=False, **kwargs):
+        xs, ys = self._get_plot_values(x=x, y=y, normalize=normalize)
+        ax.plot(xs, ys, **kwargs)
+
+    def scatter(self, x, y, ax, normalize=False, **kwargs):
+        xs, ys = self._get_plot_values(x=x, y=y, normalize=normalize)
+        ax.scatter(xs, ys, c=self.param_values, **kwargs)
+
+    def sample_adaptive(self, x, y, dist_threshold, reset=False):
+        if reset:
+            self._reset()
+
+        self._prepare_mask(x, y)
         learner = adaptive.Learner1D(
             self._sample,
-            bounds=(0, 1),
+            bounds=self.bounds,
             loss_per_interval=self._optim_curve_loss,
         )
         adaptive.BlockingRunner(learner, loss_goal=dist_threshold, ntasks=1)
 
-        self._get_sampled_values(learner)
-        self._get_filters()
+        param_values, eval_values = self._get_sampled_values(learner)
+        filters = self._get_filters(param_values)
+        self._update(param_values, eval_values, filters)
 
         return self
 
-    def sample_homogeneous(self, n_points):
-        lambdas = np.linspace(0, 1, num=n_points)
+    def sample_homogeneous(self, n_points, reset=False):
+        param_values = np.linspace(*self.bounds, num=n_points)
 
-        return self.sample_manually(lambdas)
-
-    def sample_manually(self, lambdas):
-        self._reset()
-        self.filters = []
-        self.lambdas = lambdas
-        self.n_points = len(lambdas)
-        self._xs = np.zeros((self.n_points,))
-        self._ys = np.zeros((self.n_points,))
-
-        for i, lmbd in enumerate(self.lambdas):
-            result = self._sample(lmbd)
-            self._xs[i], self._ys[i] = result
-        self._get_filters()
-
-        return self
+        return self.sample_manually(param_values, reset=reset)
 
     def save(self, filename):
         # Combine the data from all filters
         filters = np.vstack([sf.w for sf in self.filters])
 
         # Collect all the variables to save
-        save_vars = dict(filters=filters, lambdas=self.lambdas, rats=self.rats)
-        if self.mode == "homogeneity":
-            save_vars["homs"] = self.homs
-        else:
-            save_vars["sims"] = self.sims
+        save_vars = dict(
+            bounds=self.bounds,
+            filters=filters,
+            filter_fun=self.filter_fun.__name__,
+            param=self.param,
+            param_values=self.param_values,
+            eval_keys=list(self.eval_fun.keys()),
+        )
+        for key in self.eval_fun:
+            save_vars[key] = self.get(key)
 
         # Save
-        logger.info("Saving the optimization curve to {filename}")
+        logger.info(f"Saving the optimization curve to {filename}")
         np.savez(filename, **save_vars)
 
-    def _sample(self, lmbd, return_filter=False):
-        sf, props = ctf_optimize_label(
-            self.fwd,
-            self.label,
-            self.template,
-            lmbd,
-            mode=self.mode,
-            initial="auto",
-            reg=self.reg,
-            quantify=True,
-        )
-        logger.debug(f"_sample | lambda={lmbd:.3g} | {props}")
-
-        if return_filter:
-            return sf
-
-        x_key = "hom" if self.mode == "homogeneity" else "sim"
-        return np.array([props[x_key], props["rat"]])
-
-    def _get_filters(self):
-        self.filters = [self._sample(lmbd, return_filter=True) for lmbd in self.lambdas]
-
-    def _get_sampled_values(self, learner):
-        lambdas = np.array(list(learner.data.keys()))
-        sort_idx = np.argsort(lambdas)
-        optim_curve = np.vstack(list(learner.data.values()))
-
-        self.lambdas = lambdas[sort_idx]
-        self._xs = optim_curve[sort_idx, 0]
-        self._ys = optim_curve[sort_idx, 1]
+    def _prepare_mask(self, x, y):
+        # XXX: current approach does not guarantee any order for x and y
+        self.mask = np.full(len(self.eval_fun), False)
+        keys = list(self.eval_fun.keys())
+        self.mask[keys.index(x)] = True
+        self.mask[keys.index(y)] = True
 
     def _optim_curve_loss(self, xs, ys):
         xs = [x for x in xs if x is not None]
@@ -152,11 +111,11 @@ class OptimizationCurve:
 
         if len(ys) < 2:
             return 0
-        lambda_dist = np.abs(xs[1] - xs[0])
-        plane_dist = np.linalg.norm(ys[0] - ys[1])
-        dist = np.maximum(lambda_dist, plane_dist)
+        param_dist = np.abs(xs[1] - xs[0])
+        plane_dist = np.linalg.norm(ys[0][self.mask] - ys[1][self.mask])
+        dist = np.maximum(param_dist, plane_dist)
 
-        if lambda_dist < self.sampling_limit:
+        if param_dist < self.sampling_limit:
             return 0
 
         logger.debug(f"_optim_curve_loss | {ys} | {dist}")
