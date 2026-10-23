@@ -1,0 +1,11 @@
+﻿roiextract.filter.apply\_batch\_raw
+===================================
+
+.. currentmodule:: roiextract.filter
+
+.. autofunction:: apply_batch_raw
+
+.. _sphx_glr_backref_roiextract.filter.apply_batch_raw:
+
+.. minigallery:: roiextract.filter.apply_batch_raw
+    :add-heading:

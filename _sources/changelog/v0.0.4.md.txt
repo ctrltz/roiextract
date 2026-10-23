@@ -1,0 +1,14 @@
+# Version 0.0.4 (2026-10-23)
+
+## Added
+
+* Function for calculating the cosine similarity between spatial filters
+* A `scikit-learn`-like API for defining ROI extraction pipelines consisting of several steps
+* Pipeline steps that wrap source reconstruction and ROI aggregation methods available in `mne-python`
+* Pipeline step that implements symmetric orthogonalization of ROI time series as implemented in `mne-connectivity`
+* Experimental support for caching of fitted pipeline steps
+
+## Removed
+
+* Dropped the support for Python 3.7, 3.8, and 3.9
+* Optimization of source-reconstructed spatial patterns

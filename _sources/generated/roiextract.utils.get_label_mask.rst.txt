@@ -1,0 +1,11 @@
+﻿roiextract.utils.get\_label\_mask
+=================================
+
+.. currentmodule:: roiextract.utils
+
+.. autofunction:: get_label_mask
+
+.. _sphx_glr_backref_roiextract.utils.get_label_mask:
+
+.. minigallery:: roiextract.utils.get_label_mask
+    :add-heading:

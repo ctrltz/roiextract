@@ -1,0 +1,6 @@
+# Version 0.0.1 (2023-05-08)
+
+## Added
+
+* Analytic solution for a spatial filter that optimizes a combination of CTF ratio and similarity with a template
+* Structured the code as a Python package
