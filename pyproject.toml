@@ -41,6 +41,7 @@ dev = [
 docs = [
     "intersphinx-registry",
     "numpydoc",
+    "myst-parser",
     "pydata-sphinx-theme",
     "sphinx",
     "sphinx-copybutton",

@@ -28,6 +28,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     # contrib
     "numpydoc",
+    "myst_parser",
     "sphinx_copybutton",
     "sphinxcontrib.bibtex",
     # "sphinx_gallery.gen_gallery",

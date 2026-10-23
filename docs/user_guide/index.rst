@@ -6,3 +6,4 @@ User Guide
 
    install
    getting_started/index
+   whats_new
