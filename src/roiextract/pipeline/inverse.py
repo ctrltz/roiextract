@@ -51,6 +51,8 @@ class Inverse(PipelineStep):
         self.lambda2: float = lambda2
         self.nave: int = nave
 
+        self._weights: np.ndarray = np.empty((0, 0))
+
     def __repr__(self) -> str:
         return f"Inverse<{self.method}>"
 
@@ -84,7 +86,7 @@ class Inverse(PipelineStep):
 
         return self
 
-    def transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:
+    def transform(self, data: mne.io.BaseRaw) -> np.ndarray:
         """
         Apply the fitted inverse operator to the provided data.
 
@@ -95,16 +97,13 @@ class Inverse(PipelineStep):
 
         Returns
         -------
-        stc : SourceEstimate
+        stc : array
             The source estimate obtained by applying the inverse operator.
         """
         self._check_if_prepared()
-        if self._weights is None:
-            raise RuntimeError("The weights are not set. Call fit() first.")
-
         return self._weights @ data.get_data()
 
-    def fit_transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:  # type: ignore[override]
+    def fit_transform(self, data: mne.io.BaseRaw) -> np.ndarray:  # type: ignore[override]
         """
         Fit the inverse operator to the provided data and then apply it.
 
@@ -115,7 +114,7 @@ class Inverse(PipelineStep):
 
         Returns
         -------
-        stc : SourceEstimate
+        stc : array
             The source estimate obtained by applying the inverse operator.
         """
         return self.fit(data).transform(data)
@@ -130,6 +129,9 @@ class Inverse(PipelineStep):
             The weight matrix of the inverse operator.
         """
         self._check_if_prepared()
+        if self._weights is None:
+            raise RuntimeError("The weights are not set. Call fit() first.")
+
         return self._weights
 
     def get_params(self) -> dict[str, T.Any]:
@@ -174,7 +176,7 @@ class LCMVBeamformer(PipelineStep):
         self.cov_tstep = cov_tstep
 
         self.filters: Beamformer | None = None
-        self._weights: np.ndarray | None = None
+        self._weights: np.ndarray = np.empty((0, 0))
 
     def __repr__(self) -> str:
         return "LCMVBeamformer"
@@ -246,7 +248,7 @@ class LCMVBeamformer(PipelineStep):
         self.prepared = True
         return self
 
-    def transform(self, data: mne.io.BaseRaw) -> mne.SourceEstimate:
+    def transform(self, data: mne.io.BaseRaw) -> np.ndarray:
         """
         Apply the fitted LCMV beamformer to the provided data.
 
@@ -257,13 +259,10 @@ class LCMVBeamformer(PipelineStep):
 
         Returns
         -------
-        stc : SourceEstimate
+        stc : array
             The source estimate obtained by applying the LCMV beamformer.
         """
         self._check_if_prepared()
-        if self._weights is None:
-            raise RuntimeError("The weights are not set. Call fit() first.")
-
         return self._weights @ data.get_data()
 
     def fit_transform(  # type: ignore[override]
@@ -271,7 +270,7 @@ class LCMVBeamformer(PipelineStep):
         data: mne.io.BaseRaw,
         data_cov: mne.Covariance | None = None,
         noise_cov: mne.Covariance | None = None,
-    ) -> mne.SourceEstimate:
+    ) -> np.ndarray:
         """
         Fit the LCMV beamformer to the provided data and then apply it.
 
@@ -288,7 +287,7 @@ class LCMVBeamformer(PipelineStep):
 
         Returns
         -------
-        stc : SourceEstimate
+        stc : array
             The source estimate obtained by applying the LCMV beamformer.
         """
         self.fit(data, data_cov=data_cov, noise_cov=noise_cov)
@@ -304,7 +303,6 @@ class LCMVBeamformer(PipelineStep):
             The weight matrix of the LCMV beamformer.
         """
         self._check_if_prepared()
-        assert self._weights is not None
         return self._weights
 
     def get_params(self) -> dict[str, T.Any]:
