@@ -39,6 +39,15 @@ def prepare_leadfield(fwd: mne.Forward | np.ndarray) -> np.ndarray:
     return fwd["sol"]["data"]
 
 
+def prepare_source_covariance(
+    source_cov: mne.Covariance | np.ndarray | None,
+) -> np.ndarray | None:
+    if not isinstance(source_cov, mne.Covariance):
+        return source_cov
+
+    return source_cov.data
+
+
 def prepare_label_mask(label, fwd=None):
     """
     Prepare a binary mask that indicates which sources in the forward model

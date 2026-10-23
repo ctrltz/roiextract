@@ -3,9 +3,14 @@ from functools import partial
 import mne
 import numpy as np
 
-from roiextract.prepare import prepare_label_mask, prepare_leadfield
+from roiextract.prepare import (
+    prepare_label_mask,
+    prepare_leadfield,
+    prepare_source_covariance,
+    prepare_template,
+)
 
-from .analytic import _ctf_optimize_ratio, ctf_optimize_ratio_similarity
+from .analytic import _ctf_optimize_ratio, _ctf_optimize_ratio_similarity
 from .filter import SpatialFilter
 from .numerical import ctf_optimize_ratio_homogeneity
 from .quantify import ctf_quantify
@@ -212,6 +217,7 @@ def ctf_optimize_ratio(
     fwd: mne.Forward | np.ndarray,
     label: mne.Label | mne.BiHemiLabel | np.ndarray,
     reg: float = 0.001,
+    source_cov: mne.Covariance | np.ndarray | None = None,
     return_filter: bool = True,
     ch_names: list[str] | None = None,
     name: str | None = None,
@@ -239,6 +245,10 @@ def ctf_optimize_ratio(
         it is set to ``0.001`` to ensure numerical stability while still resulting
         in a high CTF ratio.
 
+    source_cov : Covariance | array | None, optional
+        Pass a source covariance to override the default assumption of unit
+        activity with zero covariance across all sources.
+
     return_filter : bool, optional
         If ``True`` (default), wraps the optimized filter in a
         :class:`SpatialFilter` object. Otherwise, an array of filter weights
@@ -261,19 +271,34 @@ def ctf_optimize_ratio(
     """
     leadfield = prepare_leadfield(fwd)
     mask = prepare_label_mask(label, fwd)
+    source_cov = prepare_source_covariance(source_cov)
+    w = _ctf_optimize_ratio(leadfield, mask, reg, source_cov)
+    if not return_filter:
+        return w
+
     if ch_names is None and isinstance(fwd, mne.Forward):
         ch_names = fwd.ch_names
     if name is None and isinstance(label, mne.Label):
         name = label.name
-
-    w = _ctf_optimize_ratio(leadfield, mask, reg)
-    if not return_filter:
-        return w
-
     return SpatialFilter(
         w=w,
         method="ctf_optimize_ratio",
         method_params=dict(reg=reg),
         ch_names=ch_names,
         name=name,
+    )
+
+
+def ctf_optimize_ratio_similarity(fwd, label, template, priority, reg=0.001):
+    leadfield = prepare_leadfield(fwd)
+    mask = prepare_label_mask(label, fwd)
+    template = prepare_template(template, label, fwd)
+
+    w = _ctf_optimize_ratio_similarity(leadfield, mask, template, priority, reg)
+    return SpatialFilter(
+        w=w,
+        method="ctf_optimize_ratio_similarity",
+        method_params=dict(priority=priority, reg=reg),
+        ch_names=fwd.ch_names,
+        name=label.name,
     )

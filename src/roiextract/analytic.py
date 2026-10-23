@@ -3,7 +3,7 @@ from numpy.linalg import norm
 from scipy.linalg import eig
 
 
-def _ged_matrices_ratio(leadfield, mask, source_cov=None):
+def _ged_matrices_ratio(leadfield, mask):
     L_in = leadfield[:, mask]
 
     A = L_in @ L_in.T
@@ -12,9 +12,24 @@ def _ged_matrices_ratio(leadfield, mask, source_cov=None):
     return A, B
 
 
+def _ged_matrices_ratio_custom_cov(leadfield, mask, source_cov):
+    L_in = leadfield[:, mask]
+    source_cov_in = source_cov[np.ix_(mask, mask)]
+
+    # TODO: the calculations become significantly slower with a custom
+    # matrix, we could try speedups for corner cases (e.g., fully diagonal)
+    A = L_in @ source_cov_in @ L_in.T
+    B = leadfield @ source_cov @ leadfield.T
+
+    return A, B
+
+
 def _ctf_optimize_ratio(leadfield, mask, reg, source_cov=None):
     # Get the GED matrices and apply regularization
-    A, B = _ged_matrices_ratio(leadfield, mask, source_cov=None)
+    if source_cov is None:
+        A, B = _ged_matrices_ratio(leadfield, mask)
+    else:
+        A, B = _ged_matrices_ratio_custom_cov(leadfield, mask, source_cov)
     A_reg = A + reg * np.trace(A) * np.eye(*A.shape) / A.shape[0]
     B_reg = B + reg * np.trace(B) * np.eye(*B.shape) / B.shape[0]
 
@@ -25,9 +40,7 @@ def _ctf_optimize_ratio(leadfield, mask, reg, source_cov=None):
     return w
 
 
-def ctf_optimize_ratio_similarity(
-    leadfield, template, mask, lambda_, regA=0.001, regB=0.001
-):
+def _ctf_optimize_ratio_similarity(leadfield, mask, template, priority, reg=0.001):
     """
     Optimize a linear combination of similarity with a template CTF and
     within/outside CTF ratio
@@ -43,7 +56,7 @@ def ctf_optimize_ratio_similarity(
     mask: array_like
         Voxel mask of the region of interest with shape (voxels,). Contains
         ones and zeros for voxels within and outside ROI, respectively.
-    lambda_: float
+    priority: float
         If 0, only ratio is optimized. If 1, only similarity. Values in between
         allow tweaking the balance between optimization for similarity or ratio.
     regA, regB: float
@@ -58,10 +71,10 @@ def ctf_optimize_ratio_similarity(
     Raises
     ------
     ValueError
-        If the provided lambda_ value is out of [0, 1] range.
+        If the provided priority value is out of [0, 1] range.
     """
-    if lambda_ > 1.0 or lambda_ < 0.0:
-        raise ValueError("Value of lambda_ should lie in [0, 1] range")
+    if priority > 1.0 or priority < 0.0:
+        raise ValueError("Value of priority should lie in [0, 1] range")
 
     # Make sure w0 is a row vector with unit length
     template = np.atleast_1d(np.squeeze(template))
@@ -80,10 +93,10 @@ def ctf_optimize_ratio_similarity(
     # Solve the generalized eigenvalue problem
     A_rat = L_out @ L_out.T
     A_sim = L_in @ (template.T @ template) @ L_in.T
-    A = (1 - lambda_) * A_rat - lambda_ * A_sim
-    A_reg = A + regA * np.trace(A) * np.eye(*A.shape) / A.shape[0]
+    A = (1 - priority) * A_rat - priority * A_sim
+    A_reg = A + reg * np.trace(A) * np.eye(*A.shape) / A.shape[0]
     B = L_in @ L_in.T
-    B_reg = B + regB * np.trace(B) * np.eye(*B.shape) / B.shape[0]
+    B_reg = B + reg * np.trace(B) * np.eye(*B.shape) / B.shape[0]
     [eigvals, eigvecs] = eig(A_reg, B_reg)
 
     # Get the eigenvector that corresponds to the smallest eigenvalue
