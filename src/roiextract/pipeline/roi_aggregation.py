@@ -275,7 +275,7 @@ class CentroidAggregation(PipelineStep):
             The extracted time courses for each label.
         """
         self._check_if_prepared()
-        return data[self._indices, :]
+        return self._weights @ data
 
     def fit_transform(  # type: ignore[override]
         self,
